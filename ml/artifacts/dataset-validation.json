@@ -1,0 +1,16 @@
+{
+  "valid": true,
+  "records": 400,
+  "duplicates_removed": 0,
+  "labels": {
+    "normal": 200,
+    "scam": 200
+  },
+  "connected_groups": 150,
+  "sources": [
+    "ScamGraph synthetic demonstration dataset v1 (not reported incidents)"
+  ],
+  "dataset_is_sample": true,
+  "sample_records": 400,
+  "domain_grouping": "campaign + conservative registrable-domain + normalized exact-text connected components"
+}

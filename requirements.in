@@ -1,0 +1,28 @@
+# Python 3.12. Install the fully resolved requirements.lock for reproducibility.
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+SQLAlchemy==2.0.40
+alembic==1.15.2
+psycopg[binary]==3.2.6
+pydantic[email]==2.11.4
+pydantic-settings==2.9.1
+python-multipart==0.0.20
+httpx==0.28.1
+pytest==8.3.5
+Pillow==11.2.1
+numpy==2.2.5
+scikit-learn==1.6.1
+xgboost==3.0.0; sys_platform != "linux" or platform_machine != "x86_64"
+xgboost-cpu==3.0.0; sys_platform == "linux" and platform_machine == "x86_64"
+shap==0.47.2
+networkx==3.4.2
+opencv-python-headless==4.11.0.86
+pytesseract==0.3.13
+sentence-transformers==4.1.0
+torch==2.7.0
+transformers==4.51.3
+zstandard==0.23.0
+PyJWT[crypto]==2.10.1
+pyobjc-framework-Vision==11.0; sys_platform == "darwin"
+# Optional local PostgreSQL launcher; production uses the Compose Postgres service.
+pgserver==0.1.4; sys_platform == "darwin"

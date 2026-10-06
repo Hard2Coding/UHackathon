@@ -1,0 +1,89 @@
+# Fully resolved from the tested macOS ARM64 CPython 3.12 environment.
+# Platform markers exclude macOS OCR and the optional local PostgreSQL launcher elsewhere.
+# Linux Docker installs the matching CPU torch wheel first (2.7.0+cpu).
+alembic==1.15.2
+annotated-types==0.8.0
+anyio==4.15.1
+certifi==2026.7.22
+charset-normalizer==3.5.2
+click==8.5.0
+cloudpickle==3.1.2
+dnspython==2.8.0
+email-validator==2.3.0
+fastapi==0.115.12
+fasteners==0.20
+filelock==4.0.12
+fsspec==2026.9.0
+h11==0.16.0
+hf-xet==1.6.0
+httpcore==1.0.9
+httptools==0.8.0
+httpx==0.28.1
+huggingface_hub==0.36.2
+idna==3.20
+iniconfig==2.3.0
+Jinja2==3.1.6
+joblib==1.6.0
+llvmlite==0.50.0
+Mako==1.4.3
+MarkupSafe==3.0.4
+mpmath==1.3.0
+networkx==3.4.2
+numba==0.68.0
+numpy==2.2.5
+opencv-python-headless==4.11.0.86
+packaging==26.3
+pandas==3.0.6
+pgserver==0.1.4; sys_platform == "darwin"
+pillow==11.2.1
+platformdirs==4.12.3
+pluggy==1.6.0
+psutil==7.2.2
+psycopg==3.2.6
+psycopg-binary==3.2.6
+pydantic==2.11.4
+pydantic-settings==2.9.1
+pydantic_core==2.33.2
+pyobjc-core==12.2.2; sys_platform == "darwin"
+pyobjc-framework-Cocoa==12.2.2; sys_platform == "darwin"
+pyobjc-framework-CoreML==12.2.2; sys_platform == "darwin"
+pyobjc-framework-Quartz==12.2.2; sys_platform == "darwin"
+pyobjc-framework-Vision==11.0; sys_platform == "darwin"
+pytesseract==0.3.13
+pytest==8.3.5
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.4
+python-multipart==0.0.20
+PyYAML==6.0.3
+regex==2026.9.29
+requests==2.34.2
+safetensors==0.8.0
+scikit-learn==1.6.1
+scipy==1.18.1
+sentence-transformers==4.1.0
+setuptools==84.0.0
+shap==0.47.2
+six==1.17.0
+slicer==0.0.8
+SQLAlchemy==2.0.40
+starlette==0.46.2
+sympy==1.14.0
+threadpoolctl==3.7.0
+tokenizers==0.21.4
+torch==2.7.0
+tqdm==4.70.1
+transformers==4.51.3
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+urllib3==2.8.0
+uvicorn==0.34.2
+uvloop==0.23.0; sys_platform != "win32"
+watchfiles==1.3.0
+websockets==17.2
+xgboost==3.0.0; sys_platform != "linux" or platform_machine != "x86_64"
+xgboost-cpu==3.0.0; sys_platform == "linux" and platform_machine == "x86_64"
+zstandard==0.23.0
+PyJWT==2.10.1
+cryptography==50.0.2
+cffi==2.1.1
+pycparser==3.0
