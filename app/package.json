@@ -4,12 +4,13 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "web": "expo start --web",
-    "build": "expo export --platform web --clear",
-    "typecheck": "tsc --noEmit",
-    "test:flows": "node src/__tests__/social.test.cjs && node src/__tests__/privacy.test.cjs"
-  },
+  "start": "expo start",
+  "ios": "expo run:ios",
+  "web": "expo start --web",
+  "build": "expo export --platform web --clear",
+  "typecheck": "tsc --noEmit",
+  "test:flows": "node src/__tests__/social.test.cjs && node src/__tests__/privacy.test.cjs"
+},
   "dependencies": {
     "@expo-google-fonts/noto-sans-thai": "^0.4.2",
     "expo": "55.0.31",
