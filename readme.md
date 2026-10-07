@@ -1,69 +1,71 @@
 # ScamGraph AI
 
-**Predict Before It Gets Reported** — แอพตรวจความเสี่ยงข้อความ ลิงก์ รูปภาพ QR และ entity พร้อมเหตุผลที่อ้างอิงหลักฐานจริง ภาษาไทย/อังกฤษ สำหรับเดโม Hackathon
+**Predict Before It Gets Reported** — a Thai/English hackathon app that assesses the risk of messages, links, images, QR codes, and identifiers, with explanations grounded in the available evidence.
 
-นี่คือ monorepo ที่เชื่อม Expo/React Native, FastAPI, ฐานข้อมูล และโมเดลที่ฝึกจริงเข้าด้วยกัน คะแนนใช้ inference ของ artifacts ร่วมกับ policy ประวัติที่เปิดเผยในผล ไม่ได้ hardcode ผลตามตัวอย่าง ข้อมูล train และกราฟที่แถมเป็น **ข้อมูลสังเคราะห์สำหรับสาธิต** ไม่ใช่ประวัติการโกงจริง
+This monorepo connects Expo/React Native, FastAPI, a database, and trained machine-learning models. Scores come from model-artifact inference combined with a history-based policy disclosed in each result; example results are not hardcoded. The included training data and graph records are **synthetic demonstration data**, not real fraud reports.
 
-คะแนน 0–100 ยังไม่ calibrate จึงไม่ใช่เปอร์เซ็นต์โอกาสโกง “ไม่พบประวัติ” ไม่ได้หมายถึงปลอดภัย และความสัมพันธ์ในกราฟหรือความคล้ายของข้อความไม่ใช่การยืนยันว่าบุคคลใดโกง
+Scores from 0–100 are not calibrated and do not represent the probability of fraud. “No history found” does not mean safe. Graph connections and text similarity do not establish that a person committed fraud.
 
-Branding อิงภาพ `ScamGraph AI.png` ที่ผู้ใช้ให้ล่าสุด: สัญลักษณ์ S, network nodes และ shield/check พร้อม purple–blue–cyan gradient และโหมด light/dark แทน shield ชั่วคราว โลโก้เป็น reference-derived raster interpretation ที่สร้างด้วย ImageGen ไม่ใช่การตัดพิกเซลเดิมหรือ vector original; palette หลักใช้ pale blue/white และน้ำเงิน–ม่วง พร้อม midnight navy สำหรับ dark mode และคงสีความเสี่ยงตามความหมาย รายละเอียด masters, exports และ prompts อยู่ใน `app/assets/BRAND.md`
+The branding follows the supplied `ScamGraph AI.png` reference: an S symbol, network nodes, and a shield/check, with a purple–blue–cyan gradient and light/dark variants. The logo is a reference-derived raster interpretation generated with ImageGen, rather than a pixel crop or the original vector artwork. The interface uses pale blue/white and blue–purple accents, with midnight navy in dark mode and semantic risk colors. Masters, exports, and prompts are documented in `app/assets/BRAND.md`.
 
-## UI และ Webapp เวอร์ชันล่าสุด
+## Current UI and Webapp
 
-ปรับตามภาพหน้าจอมือถือ/เว็บที่ผู้ใช้ให้: หน้าเปิดเป็นโลโก้และตัวเลือกล็อกอิน Google, LINE, อีเมล และสมัครบัญชี หน้า Dashboard มีการ์ดสแกน 4 หมวด มือถือใช้เมนูด้านล่าง เว็บใช้เมนูด้านซ้าย โทนเริ่มต้นเป็นขาว–ฟ้า ปุ่มไล่สีน้ำเงิน–ม่วง และสลับ dark mode/ภาษาได้ เอฟเฟกต์เข้าแสดงผลจบในช่วงสั้นและเคารพ reduced-motion ของระบบ ปุ่มมี hover/focus glow โดยไม่ซ่อนตัวเลือกเข้าสู่ระบบ
+The interface follows the supplied mobile and desktop references. The opening screen contains the logo and Google, LINE, email login, and registration options. The Dashboard has four scan categories, bottom navigation on mobile, and a left sidebar on desktop. The light theme uses white/light blue with blue–purple gradient buttons; dark mode and Thai/English language switching are available. Entrance effects finish quickly and respect the operating system's reduced-motion preference. Buttons have hover/focus glow while login choices remain visible.
 
-Dashboard/กราฟ 7 วันคำนวณจากประวัติส่วนตัวที่บันทึกจริงสูงสุด 300 รายการ หน้าแจ้งเตือนเปิดผล HIGH ที่บันทึกไว้ และศูนย์ช่วยเหลือค้นหาคำถามได้ Webapp มี manifest/ไอคอน/service worker สำหรับ browser ที่รองรับ การอัปเดตรอผู้ใช้กดก่อนโหลดหน้าใหม่ แคชเฉพาะไฟล์แอพสาธารณะ ไม่แคช API/ผลตรวจ/รูปอัปโหลด การวิเคราะห์และข้อมูลส่วนตัวยังต้องออนไลน์
+Dashboard totals and the seven-day chart use up to 300 saved records from the current user's history. The alerts page opens saved HIGH-risk results, and the help center provides searchable FAQs. The Webapp includes a manifest, icons, and a service worker for supported browsers. Updates wait for user confirmation before reloading. Only public app assets are cached; API responses, analysis results, and uploaded images are not cached. Analysis and private account data require an online connection.
 
-ผู้ใช้ยืนยันว่ายังไม่มีโครงการ Google Cloud/LINE จึงยังไม่ได้เปิด provider จริง อ่าน [คู่มือเปิดการเชื่อมต่อ](ACTIVATION.md), [Webapp](WEBAPP.md), [สถานะแต่ละฟังก์ชัน](FUNCTION_STATUS.md) และ [ผลทดสอบ](QA_RESULTS.md) ก่อนเปิดใช้งานจริง
+Google Cloud and LINE projects have not been configured, so real provider login is not activated. Read the [activation guide](ACTIVATION.md), [Webapp guide](WEBAPP.md), [function status](FUNCTION_STATUS.md), and [verification results](QA_RESULTS.md) before enabling services for real users.
 
-## โค้ดร่วม App + Web และการอัปเดต
+## Shared App + Web Source and Updates
 
-Repository หลักคือ `Hard2Coding/UHackathon` branch `DevTutor` ทั้งมือถือและเว็บใช้ `app/App.tsx`, `app/src` และ `shared` ร่วมกัน API/โมเดลอยู่ใน `backend`/`ml` ไม่ต้องคัดลอกหน้าจอไปสองโครงการ
+The primary repository is `Hard2Coding/UHackathon`, on branch `DevTutor`. Mobile and web share `app/App.tsx`, `app/src`, and `shared`; the API and models live in `backend` and `ml`. Screens do not need to be copied between separate projects.
 
-หลังติดตั้ง dependencies แล้ว รัน `npm run dev` ที่ราก repo เพื่อเปิด API reload และ Expo Metro ตัวเดียวสำหรับเว็บและ native development client แก้ source แล้วทั้งสองฝั่งรับโค้ดเดียวกัน คำสั่ง `npm run ios` / `npm run android` build/install native โดยใช้ Metro ที่เปิดไว้ ดู [DEVELOPMENT.md](DEVELOPMENT.md) สำหรับ LAN IP และพอร์ต
+After installing dependencies, run `npm run dev` from the repository root. It starts API reload and one Expo Metro server for web and native development clients. Both platforms consume the shared source. `npm run ios` and `npm run android` build/install the native app using the running Metro server. See [DEVELOPMENT.md](DEVELOPMENT.md) for LAN addresses and port configuration.
 
-เว็บรองรับ Vercel โดย Import repo ที่รากและตั้ง `EXPO_PUBLIC_API_URL` เป็น HTTPS backend จริง อ่าน [VERCEL.md](VERCEL.md) เมื่อเชื่อม Git แล้ว Vercel build/deploy จาก branch ที่ติดตามตามการตั้งค่าโครงการ GitHub Actions ตรวจและ export เว็บ/Android/iOS พร้อม Git SHA เดียวกัน ส่วน OTA ไปแอพที่ติดตั้งต้องตั้ง Expo project/updates/runtime ก่อน ดู [RELEASES.md](RELEASES.md)
+The web build supports Vercel: import the repository at its root and set `EXPO_PUBLIC_API_URL` to a real HTTPS backend. See [VERCEL.md](VERCEL.md). Once Git integration is configured, Vercel builds/deploys the tracked branch according to the project settings. GitHub Actions checks and exports web/Android/iOS artifacts from the same Git SHA. OTA updates for installed mobile apps require an Expo project, update configuration, and a compatible native runtime first; see [RELEASES.md](RELEASES.md). Vercel deployment and mobile OTA publishing have not been activated in this delivery.
 
-## โครงสร้าง
+## Repository Layout
 
 ```text
-app/                 Expo + React Native + TypeScript, เว็บและโค้ด Android/iOS
-backend/app/         FastAPI, auth, history, reports, graph, media, admin, jobs
-backend/migrations/  Alembic database migrations
-backend/tests/       API/security/integration tests
-ml/                  import/validate/train/evaluate และ inference
-ml/datasets/         ชุดข้อมูลสังเคราะห์ที่ติดป้าย sample
-ml/artifacts/default/โมเดลที่ฝึกจริง, metadata และผล evaluation
-ml/artifacts/embedding-model/ pretrained multilingual model (ดาวน์โหลดแยก)
-shared/              OpenAPI snapshot และความหมายของ API contract
-demo-assets/         รูป OCR, QR, รูปว่าง และ CSV สำหรับเดโมที่ปลอดภัย
-scripts/             ติดตั้ง เริ่มเดโม ตรวจระบบ และสร้าง ZIP
+app/                         Expo + React Native + TypeScript for web and Android/iOS
+backend/app/                 FastAPI, auth, history, reports, graph, media, admin, jobs
+backend/migrations/          Alembic database migrations
+backend/tests/               API/security/integration tests
+ml/                          Data import/validation/training/evaluation and inference
+ml/datasets/                 Synthetic datasets explicitly marked as samples
+ml/artifacts/default/        Trained models, metadata, and evaluation results
+ml/artifacts/embedding-model/ Pretrained multilingual model; downloaded separately
+shared/                      OpenAPI snapshot and API contract semantics
+demo-assets/                 Safe OCR, QR, blank-image, and CSV demonstration assets
+scripts/                     Setup, local demo, verification, and ZIP packaging
 ```
 
-Python dependency pins อยู่ใน `requirements.in`; dependencies ที่ resolve และติดตั้งจริงทั้งหมดอยู่ใน `requirements.lock` จาก Python 3.12/macOS ARM64 มี platform markers สำหรับ OCR ของ macOS และ CPU XGBoost บน Linux x86_64 Frontend ใช้ `app/package-lock.json` กับ `npm ci`
+Python dependency pins are defined in `requirements.in`. The complete resolved dependency set installed on Python 3.12/macOS ARM64 is recorded in `requirements.lock`, with platform markers for macOS OCR and Linux x86_64 CPU XGBoost. Frontend installation uses `app/package-lock.json` with `npm ci`.
 
-## เริ่มเดโมบนเครื่อง
+## Run the Local Demo
 
-ต้องมี Python **3.12**, Node.js **22 LTS ขึ้นไป** และ npm (เครื่องทดสอบใช้ Node 24.18.0/npm 11.16.0) การติดตั้งครั้งแรกใช้อินเทอร์เน็ตสำหรับ dependencies และ pretrained SentenceTransformer ประมาณ 449 MB บน macOS ARM64 จะดาวน์โหลด portable OCR runtime อีกประมาณ 186 MB ไม่ต้องมี API key
+Requirements: Python **3.12**, Node.js **22 LTS or newer**, and npm. The verification machine used Node 24.18.0/npm 11.16.0. Initial setup requires internet access to install dependencies and download approximately 449 MB of pretrained SentenceTransformer weights. On macOS ARM64, it also downloads approximately 186 MB of portable OCR dependencies. No API key is required for the core demo.
 
-จากโฟลเดอร์ `scamgraph-ai`:
+From the repository root, create `.env` from the example if it does not already exist, then bootstrap:
 
 ```bash
 cp .env.example .env
 bash scripts/bootstrap.sh
 ```
 
-หาก Python 3.12 อยู่คนละตำแหน่ง ให้กำหนด `PYTHON_BIN=/absolute/path/python3.12` ก่อนคำสั่ง bootstrap ถ้าไม่ต้องการโหลด SentenceTransformer ตอนติดตั้ง ให้ใช้ `DOWNLOAD_EMBEDDINGS=0 bash scripts/bootstrap.sh`; baseline ยังทำงาน แต่ similarity จะระบุว่าใช้ lexical fallback ใช้ `INSTALL_LOCAL_OCR=0` เพื่อข้าม portable OCR บน macOS และโหลดทีหลังด้วย `.venv/bin/python scripts/install_local_ocr.py`
+If Python 3.12 is installed elsewhere, set `PYTHON_BIN=/absolute/path/python3.12` before running bootstrap. To skip the SentenceTransformer download, use `DOWNLOAD_EMBEDDINGS=0 bash scripts/bootstrap.sh`; baseline analysis remains available, and similarity is labeled as a lexical fallback. Use `INSTALL_LOCAL_OCR=0` to skip portable OCR on macOS and install it later with `.venv/bin/python scripts/install_local_ocr.py`.
 
-เปิด terminal ที่ 1:
+For shared mobile/web development, use `npm run dev` as described above. The two-terminal demo can also be started separately.
+
+Terminal 1:
 
 ```bash
 bash scripts/local_demo.sh
 ```
 
-คำสั่งนี้เลือก **SQLite สำหรับ local demo อย่างชัดเจน** ที่ `.runtime/scamgraph-demo.db`, รัน migration/seed และเปิด API ที่ `http://localhost:8000` เอกสาร API อยู่ที่ `http://localhost:8000/docs` หาก artifacts ยังไม่มี จะฝึกจาก sample dataset ก่อนเริ่มเซิร์ฟเวอร์
+This command explicitly selects **SQLite for the local demo** at `.runtime/scamgraph-demo.db`, runs migrations/seed, and starts the API at `http://localhost:8000`. API documentation is available at `http://localhost:8000/docs`. If model artifacts are missing, the sample dataset is trained before the server starts.
 
-เปิด terminal ที่ 2:
+Terminal 2:
 
 ```bash
 source scripts/env.sh
@@ -71,22 +73,22 @@ cd app
 npm run web -- --port 8081
 ```
 
-เปิด `http://localhost:8081` แอพเว็บเรียก API จริงที่พอร์ต 8000 กล้องบนเว็บต้องอยู่บน localhost หรือ HTTPS และจะขอสิทธิ์เมื่อผู้ใช้เลือกฟังก์ชันเท่านั้น
+Open `http://localhost:8081`. The Webapp calls the real local API on port 8000. Browser camera access requires localhost or HTTPS, and permission is requested only when the user selects a camera feature.
 
-บัญชีเดโมที่ seed สร้างใน development:
+Development seed accounts:
 
-| สิทธิ์ | อีเมล | รหัสผ่าน |
+| Role | Email | Password |
 |---|---|---|
-| ผู้ใช้ | `demo@scamgraph.demo` | `DemoUser!2026` |
-| ผู้ดูแล | `admin@scamgraph.demo` | `DemoAdmin!2026` |
+| User | `demo@scamgraph.demo` | `DemoUser!2026` |
+| Admin | `admin@scamgraph.demo` | `DemoAdmin!2026` |
 
-Guest ตรวจสอบได้โดยไม่สมัคร การบันทึกประวัติ งาน batch และแจ้งเบาะแสใช้บัญชีผู้ใช้
+Guests can analyze content without registering. Saving history, batch jobs, and submitting reports require a user account.
 
-บนโทรศัพท์ ให้ตั้ง `EXPO_PUBLIC_API_URL=http://<IP ของเครื่องที่รัน API>:8000/api` ก่อนเริ่ม development server สำหรับ Android emulator ใช้ `http://10.0.2.2:8000/api` ไม่ใช่ localhost ของโทรศัพท์ ฟังก์ชัน caller identification และ OAuth app deep link ต้องใช้ development/production build ที่รวม native module ของแอพ Expo Go และเว็บแสดงสถานะ unavailable สำหรับสายเรียกเข้า โค้ด native มีอยู่ แต่การติดตั้งบนอุปกรณ์ Android/iOS จริงยังไม่ได้ทดสอบในเครื่องส่งมอบนี้
+For a physical phone, set `EXPO_PUBLIC_API_URL=http://<API-computer-LAN-IP>:8000/api` before starting the development server. An Android emulator can use `http://10.0.2.2:8000/api`; localhost on a phone refers to the phone itself. Caller identification and the app's OAuth deep link require a development/production build containing the native module and app URL scheme. Expo Go and web show incoming-call protection as unavailable. Native source is included, but installation on physical Android/iOS devices has not been verified in this delivery. Because the runner honors `EXPO_PUBLIC_API_URL` from `.env`, override its localhost value explicitly when testing on a physical phone; changing `DEV_HOST` alone does not replace that configured API URL.
 
 ## PostgreSQL + Docker Compose
 
-เส้นทางหลักสำหรับ deployment ใช้ **PostgreSQL 16** พร้อม Alembic migrations, Tesseract ภาษาไทย/อังกฤษ, API และเว็บที่ build แล้ว:
+The intended deployment path uses **PostgreSQL 16**, Alembic migrations, Thai/English Tesseract, the API, and a built Webapp. The `.env` copy command below is for first-time setup only; skip it if `.env` already exists:
 
 ```bash
 cp .env.example .env
@@ -96,29 +98,29 @@ docker compose up -d
 docker compose logs -f backend
 ```
 
-เปิดเว็บ `http://localhost:8080` และ API docs `http://localhost:8000/docs` Nginx ส่ง `/api/` ไป backend ใช้ `docker compose down` เพื่อหยุดระบบ volume ฐานข้อมูลยังคงอยู่
+Keep an existing `.env` and update its required fields instead of overwriting it. Open the web interface at `http://localhost:8080` and API documentation at `http://localhost:8000/docs`. Nginx forwards `/api/` to the backend. Use `docker compose down` to stop the services; the database volume is retained.
 
-หากข้าม download command โมเดลข้อความ/URL/Anomaly ยังทำงานจาก artifacts แต่ sentence embeddings จะไม่พร้อมและ API จะแสดงสถานะนั้น `.env` ไม่ถูก copy เข้า image และไม่อยู่ใน ZIP อย่าเก็บ API keys ลง Git
+If the embedding download is skipped, text/URL/anomaly models still use the included artifacts, but sentence embeddings are unavailable and the API reports that state. `.env` is not copied into images or included in the source ZIP. Do not commit API keys to Git.
 
-**สถานะที่ตรวจได้ใน environment นี้:** ตรวจ Compose YAML, service references, build paths และ shell scripts แล้ว แต่ไม่มี Docker และ PostgreSQL server ที่ใช้งานได้ จึงยังไม่ได้รัน container build หรือ integration กับ PostgreSQL จริง มีการทดลอง PostgreSQL binaries ใน project แล้ว แต่ sandbox ปฏิเสธ shared-memory syscall (`shmget`) ส่วน local demo ใช้ SQLite เพื่อทดสอบ flow ที่รันได้
+**Verified scope:** Compose YAML, service references, build paths, and shell scripts were checked. Container builds and live PostgreSQL integration were not verified because a working Docker/PostgreSQL runtime was unavailable during those checks. A previous attempt to run project-local PostgreSQL binaries was blocked by a sandbox shared-memory syscall restriction (`shmget`). SQLite was used for the executable local-demo flows.
 
-ก่อนใช้งาน production ให้กำหนด `APP_ENV=production` และ `ENABLE_DEMO_SEED=false`, ใช้ credential ของตนเองและ provision admin ที่เชื่อถือได้ เพิ่ม HTTPS, backup, secrets manager และงาน background/จำกัดความถี่ที่รองรับหลาย worker โค้ดเดโมไม่ได้มีระบบจัดการ production infrastructure ให้อัตโนมัติ
+Before production use, set `APP_ENV=production` and `ENABLE_DEMO_SEED=false`, use your own credentials, provision a trusted administrator, and configure HTTPS, backups, secret management, background jobs, and rate limiting suitable for multiple workers. The demo does not provision production infrastructure automatically.
 
-## เดโม Hackathon 5–7 นาที
+## Five-to-Seven-Minute Hackathon Demo
 
-1. เริ่มจากหน้าต้อนรับ เลือกเข้าบัญชีอีเมลเดโมหรือกด Guest เอง ปุ่ม Google/LINE แสดง not configured เมื่อยังไม่มี credentials จากนั้นเลือกตัวอย่างข้อความทั่วไปและข้อความเร่งให้ส่ง OTP เปรียบเทียบคะแนนจากโมเดลจริง เปิดปัจจัยเสี่ยงและหน้ารายละเอียดเพื่อดู model version/หน่วย SHAP
-2. วางลิงก์ `https://bank-verify-demo.test/confirm` แสดงว่า HTTPS ไม่ได้ยืนยันความปลอดภัย และข้อมูลอายุโดเมน/ชื่อเสียงภายนอกยังไม่มี
-3. อัปโหลด `demo-assets/screenshot-thai-demo.png` หรือ `screenshot-demo.png` อ่าน OCR ตรวจ/แก้ข้อความ แล้วค่อยวิเคราะห์ ใช้ `blank.png` สาธิตภาพอ่านไม่ออก
-4. อัปโหลด `demo-assets/qr-demo.png` ดู payload ก่อนกดวิเคราะห์ แอพไม่เปิดลิงก์และไม่ทำธุรกรรม ใช้รูปว่างสาธิต QR ไม่พบ
-5. วิเคราะห์ `https://reward-support.example/claim` แล้วเปิดกราฟ กราฟต้องติดป้าย SAMPLE กด node/edge ดูที่มาและเวลา ความเชื่อมโยงไม่ใช่ข้อกล่าวหา
-6. เข้าบัญชี demo บันทึกผล ค้นหา/กรองประวัติ แชร์หรือส่งออกรายงานแบบปกปิดข้อมูล และแจ้งเบาะแสใหม่ ดูสถานะ pending ซึ่งยังไม่ทำให้ entity เป็น scam ที่ยืนยันแล้ว
-7. นำเข้า `demo-assets/batch-demo.csv` ติดตาม job และผลรายรายการ เข้าบัญชี admin ดูสถิติจริงจากการใช้งาน ตัดสินรายงานพร้อมเหตุผล และดู model metrics/training jobs/configuration
+1. Start at the login screen and choose a demo email account or Guest. Google/LINE show “not configured” when credentials are absent. Compare a normal message with an urgent OTP-request example, then open the risk factors and technical details to inspect the model version and SHAP units.
+2. Paste `https://bank-verify-demo.test/confirm`. Show that HTTPS does not establish safety and that live domain-age/external-reputation data is unavailable.
+3. Upload `demo-assets/screenshot-thai-demo.png` or `screenshot-demo.png`. Review/edit the OCR text before analysis. Use `blank.png` to demonstrate an unreadable image.
+4. Upload `demo-assets/qr-demo.png` and inspect its payload before analysis. The app does not open links or make transactions automatically. Use a blank image to demonstrate “QR not found.”
+5. Analyze `https://reward-support.example/claim` and open the graph. The graph must display SAMPLE labels. Inspect node/edge provenance and timestamps; a connection is not an allegation.
+6. Sign in to the demo account, save a result, search/filter history, share/export a masked report, and submit a new clue. Its pending status does not confirm an entity as fraudulent.
+7. Import `demo-assets/batch-demo.csv` and follow the job and per-row results. Sign in as Admin to inspect usage statistics, moderate reports with reasons, and view model metrics, training jobs, and configuration.
 
-URL ทั้งหมดที่ใช้เดโมเป็น `.test`/`.example` ซึ่งสงวนไว้ ไม่ใช่ลิงก์อันตรายจริง กราฟและ source ที่ seed เป็นข้อมูลแต่งสำหรับเดโมและใช้ placeholder แทนบุคคลจริง
+Demo URLs use reserved `.test`/`.example` domains rather than real malicious links. Seeded graph/source records are fictional demonstration data and use placeholders rather than real people.
 
-## ฝึกและประเมินโมเดล
+## Train and Evaluate Models
 
-จาก monorepo root:
+From the monorepo root:
 
 ```bash
 source scripts/env.sh
@@ -128,9 +130,9 @@ source scripts/env.sh
 .venv/bin/python -m ml evaluate ml/datasets/sample.jsonl --artifacts ml/artifacts/default
 ```
 
-`env.sh` ตั้ง OpenMP library path สำหรับ macOS จาก PyTorch ที่ติดตั้งแล้ว และเก็บ Expo/npm/cache ใน `.runtime` ของโปรเจกต์ (`__UNSAFE_EXPO_HOME_DIRECTORY`, `NPM_CONFIG_CACHE`, `EXPO_NO_TELEMETRY=1`) จึงไม่ต้องแก้ไฟล์ระบบหรือเขียน cache ลง home directory เพื่อรันเดโมนี้
+`env.sh` configures the macOS OpenMP library path from the installed PyTorch package and keeps Expo/npm caches under the project's `.runtime` directory (`__UNSAFE_EXPO_HOME_DIRECTORY`, `NPM_CONFIG_CACHE`, `EXPO_NO_TELEMETRY=1`). Running this demo does not require editing system files or placing those caches in the home directory.
 
-ข้อมูลจริงรองรับ CSV/JSON/JSONL ต้องมี `label` เป็น `normal`/`scam`, `source`, `campaign_id`, และ `text` หรือ `urls` (list หรือ URL string ใน CSV); ตั้ง `is_sample=false` เฉพาะเมื่อมีข้อมูลจริงที่ใช้ได้ตามสิทธิ์และตรวจสอบ labels แล้ว:
+Real-data import supports CSV/JSON/JSONL. Records must contain `label` (`normal`/`scam`), `source`, `campaign_id`, and `text` or `urls` (a list, or a URL string in CSV). Set `is_sample=false` only for data you are authorized to use and whose labels have been verified:
 
 ```bash
 .venv/bin/python -m ml import /path/to/verified.csv --output ml/datasets/verified.jsonl
@@ -139,113 +141,117 @@ source scripts/env.sh
 .venv/bin/python -m ml evaluate ml/datasets/verified.jsonl --artifacts ml/artifacts/verified-v1
 ```
 
-ตัวอย่างหนึ่งแถว:
+Example record:
 
 ```json
-{"id":"source-row-001","text":"ข้อความที่ผ่านการติดป้ายแล้ว","urls":[],"label":"normal","campaign_id":"campaign-001","source":"ชื่อแหล่งข้อมูลและสิทธิ์ใช้งาน","is_sample":false}
+{"id":"source-row-001","text":"A message with a verified label","urls":[],"label":"normal","campaign_id":"campaign-001","source":"Source name and usage rights","is_sample":false}
 ```
 
-Pipeline deduplicate, ตรวจ label ขัดแย้ง และแยก campaign/domain/exact text ที่เชื่อมกันเป็นกลุ่มก่อน train/validation/test เลือก classifier threshold จาก validation และล็อก test split ไว้ โมเดลไม่ได้ stack ผลของ classifier อื่นเป็น feature จึงไม่มี training feature ที่ต้องทำ out-of-fold ข้อมูล community ที่ยังไม่ได้ verify ไม่เข้าสู่ retraining อัตโนมัติ
+The pipeline deduplicates records, rejects conflicting labels, and groups connected campaigns/domains/exact texts before splitting into train/validation/test sets. Classifier thresholds are selected on validation, and the test split is held out. Models do not use other classifiers' outputs as stacked training features, so those features do not require out-of-fold generation. Unverified community reports are not added to retraining automatically.
 
-Artifacts ที่ส่งมอบรุ่น `sample-v1-6c6c58eff5` ฝึกจาก sample 400 แถว (normal 200/scam 200), 150 connected groups: train 230, validation 80, test 90 ผลจริงอยู่ใน `ml/artifacts/default/evaluation.json` และ `metadata.json` มี Precision/Recall/F1/PR-AUC และ confusion matrix แม้ sample นี้ได้ metrics สูง ก็ไม่ใช่หลักฐานความแม่นยำกับ scam ในโลกจริง ชุดข้อมูลนี้ง่ายและไม่เป็นตัวแทนข้อมูลใช้งานจริง
+The included `sample-v1-6c6c58eff5` artifacts were trained on 400 sample records (200 normal/200 scam) across 150 connected groups: 230 training, 80 validation, and 90 test records. Results are recorded in `ml/artifacts/default/evaluation.json` and `metadata.json`, including precision, recall, F1, PR-AUC, and a confusion matrix. High metrics on this simple synthetic dataset do not establish real-world fraud-detection accuracy; it is not representative of production traffic.
 
-โมเดลที่ใช้งาน:
+Models in use:
 
-- ข้อความ: character 2–5 gram TF-IDF + Logistic Regression รองรับไทย/อังกฤษ
-- URL: XGBoost บน feature ที่คำนวณจาก URL โดยไม่เปิด URL; Tree SHAP contributions มีหน่วย raw model margin/log-odds
-- Anomaly: Isolation Forest อ้างอิง normal URL features จาก train เท่านั้น แสดง score แยกจากความเสี่ยง scam
-- Similarity: SentenceTransformer pretrained multilingual MiniLM 384 dimensions เมื่อไฟล์พร้อม หรือ lexical cosine fallback ที่ติดป้ายชัดเจน
-- ความสัมพันธ์: NetworkX และข้อมูล source/edge จริงในฐานข้อมูล; ยังไม่มี graph classifier ที่ฝึกด้วยข้อมูลจริง
+- **Text:** character 2–5-gram TF-IDF + Logistic Regression for Thai/English.
+- **URL:** XGBoost on features derived from the URL without visiting it. Tree SHAP contributions use raw model-margin/log-odds units.
+- **Anomaly:** Isolation Forest fitted only to normal training URL features; its score is displayed separately from scam risk.
+- **Similarity:** pretrained multilingual MiniLM SentenceTransformer embeddings with 384 dimensions when weights are available, otherwise an explicitly labeled lexical-cosine fallback.
+- **Connections:** NetworkX with database source/edge records; no graph classifier trained on real-world data is included.
 
-Fusion ใช้ค่าสูงสุดของ text/URL model scores ×100 เพื่อหลีกเลี่ยงการนับสัญญาณเดิมซ้ำ แล้วใช้ **policy ประวัติซึ่งไม่ใช่ผล ML** เป็นคะแนนขั้นต่ำเฉพาะหลักฐานที่ไม่ใช่ sample: confirmed source 85, community ที่ผู้ดูแลตรวจแล้ว 65, source ที่ยังเป็น reported 50 แต่ละผลแสดงชนิดหลักฐานและ policy ที่ใช้ กราฟ/Anomaly/similarity ไม่ได้เพิ่มคะแนนเป็น scam probability
+Fusion takes the maximum text/URL model score multiplied by 100 to avoid counting the same signal repeatedly. A separate **history policy, not an ML prediction**, applies score floors only to non-sample evidence: confirmed source 85, moderator-reviewed community source 65, and reported source 50. Each result identifies the evidence type and policy used. Graph, anomaly, and similarity results do not increase the score as a fraud probability.
 
-SentenceTransformer ถูก pin ที่ revision `e8f8c211226b894fcb81acc59f3b34ba3efd5f42` ของ `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` ZIP ไม่บรรจุ pretrained weights ขนาดใหญ่ ใช้ `python scripts/download_embeddings.py` เพื่อโหลดรุ่นเดียวกับที่ทดสอบ แหล่ง/รุ่นบันทึกใน `scamgraph_source.json` ภายในโฟลเดอร์ model
+SentenceTransformer is pinned to revision `e8f8c211226b894fcb81acc59f3b34ba3efd5f42` of `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`. Large pretrained weights are excluded from the ZIP. Run `.venv/bin/python scripts/download_embeddings.py` to download the verified revision with the project environment. Its source/revision metadata is stored in `scamgraph_source.json` inside the model directory.
 
-## Provider และข้อมูลภายนอก
+## Providers and External Data
 
-### Google และ LINE Login
+### Google and LINE Login
 
-ไฟล์ `.env.example` มี configuration ที่ยังไม่เปิดใช้ provider จริง ใส่ client/channel credentials **เฉพาะ `.env` บน backend หรือ secrets manager** ไม่ส่ง secrets ในแชท และไม่ใช้ `EXPO_PUBLIC_*` สำหรับ client secret/channel token หากมี `.env` อยู่แล้ว ให้เพิ่ม fields ใหม่โดยรักษาค่าของตนเองแทนการ copy ทับ
+`.env.example` contains configuration placeholders; real providers are not activated. Store client/channel credentials **only in the backend `.env` or a secrets manager**. Do not send secrets in chat or use `EXPO_PUBLIC_*` for client secrets/channel tokens. If `.env` already exists, add the new fields while preserving your existing values.
 
-| ค่า | ใช้ที่ไหน |
+| Variable | Purpose |
 |---|---|
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Google OAuth Web client; callback ของ backend |
-| `LINE_LOGIN_CHANNEL_ID`, `LINE_LOGIN_CHANNEL_SECRET`, `LINE_REDIRECT_URI` | LINE Login channel; callback ของ backend |
-| `OAUTH_REDIRECT_ALLOWLIST` | URL กลับเข้าเว็บ/แอพที่อนุญาตแบบ exact match |
-| `OAUTH_HTTP_TIMEOUT_SECONDS` | timeout เมื่อเรียก provider; default 5 วินาที |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Google OAuth Web client and backend callback |
+| `LINE_LOGIN_CHANNEL_ID`, `LINE_LOGIN_CHANNEL_SECRET`, `LINE_REDIRECT_URI` | LINE Login channel and backend callback |
+| `OAUTH_REDIRECT_ALLOWLIST` | Exact-match allowlist of app/web return URLs |
+| `OAUTH_HTTP_TIMEOUT_SECONDS` | Provider HTTP timeout; default 5 seconds |
 
-Google setup: สร้าง project และตั้ง audience/consent screen ใน Google Auth Platform จากนั้นสร้าง OAuth client ชนิด **Web application** ลงทะเบียน URI ที่ตรงกับ `GOOGLE_REDIRECT_URI` เช่น `https://api.<โดเมนของคุณ>/api/auth/oauth/google/callback` แบบตรงทุกตัว รวม scheme/path/trailing slash เก็บ secret ที่ backend และใช้ scopes สำหรับข้อมูลบัญชีเท่านั้น ตั้ง test users ตามสถานะของ project ก่อนทดสอบจริง [Google web-server OAuth guide](https://developers.google.com/identity/protocols/oauth2/web-server)
+For Google, create a project and configure the audience/consent screen in Google Auth Platform, then create a **Web application** OAuth client. Register the exact URI from `GOOGLE_REDIRECT_URI`, such as `https://api.your-domain.example/api/auth/oauth/google/callback`, including the scheme, path, and trailing-slash behavior. Keep the secret on the backend, use account-information scopes only, and configure test users as required by the project's status. See the [Google web-server OAuth guide](https://developers.google.com/identity/protocols/oauth2/web-server).
 
-LINE setup: สร้าง LINE Login channel สำหรับ web app ใน provider ของคุณ ลงทะเบียน `https://api.<โดเมนของคุณ>/api/auth/oauth/line/callback` ให้ตรงกับ `LINE_REDIRECT_URI` แล้วใส่ channel ID/secret ที่ backend LINE `openid` ใช้ระบุตัวตน; หากจะขอ `email` ต้องสมัคร email permission ของ channel ก่อน ไม่มี email ไม่ได้ทำให้ระบบมีสิทธิ์ผูกบัญชีอื่นจากชื่อแสดงผล [LINE Login guide](https://developers.line.biz/en/docs/line-login/integrate-line-login/)
+For LINE, create a web-app LINE Login channel under your provider. Register `https://api.your-domain.example/api/auth/oauth/line/callback` to match `LINE_REDIRECT_URI`, and store the channel ID/secret on the backend. The `openid` scope identifies the user; requesting `email` requires the channel's email permission. A missing email does not authorize linking another account by display name. See the [LINE Login guide](https://developers.line.biz/en/docs/line-login/integrate-line-login/).
 
-แยก URL สองชนิดให้ชัดเจน: provider callback เป็น backend HTTPS endpoint ที่ลงทะเบียนข้างต้น ส่วน `http://localhost:8081/` และ `scamgraph://oauth` ใน allowlist เป็นปลายทาง **หลัง backend ตรวจ callback แล้ว** สำหรับกลับเข้าแอพ อย่าลงทะเบียน `scamgraph://oauth` เป็น Google Web-client redirect; Google ไม่รองรับ Android native custom-scheme OAuth flow รูปแบบเก่า [Google native-app redirect limitations](https://developers.google.com/identity/protocols/oauth2/native-app)
+Provider callbacks and app return URLs serve different purposes. Provider callbacks are the registered backend HTTPS endpoints above. `http://localhost:8081/` and `scamgraph://oauth` in the allowlist are destinations **after the backend verifies the callback**. Do not register `scamgraph://oauth` as a Google Web-client redirect; Google does not support the older Android native custom-scheme OAuth flow. See [Google native-app redirect limitations](https://developers.google.com/identity/protocols/oauth2/native-app).
 
-Login ใช้ browser ของระบบ, state/nonce/PKCE และการแลก handoff แบบใช้ครั้งเดียว Credentials ที่ขาดทำให้ปุ่ม/provider เป็น not configured; ไม่ได้สร้างบัญชี Google/LINE จำลอง เมื่อเปลี่ยน `.env` ต้อง restart API ภาค native ต้อง build scheme `scamgraph` เข้าตัวแอพก่อน deep link จึงทำงาน
+Login uses the system browser, state/nonce/PKCE, and a one-time handoff exchange. Missing credentials produce a “not configured” state; the app does not fabricate Google/LINE accounts. Restart the API after changing `.env`. Native builds must contain the `scamgraph` URL scheme for app deep links to work.
 
-### LINE Messaging API notifications
+### LINE Messaging API Notifications
 
-LINE Login channel กับ Messaging API channel เป็นคนละ channel สร้าง LINE Official Account ใน [Official Account Manager](https://manager.line.biz/) แล้วเปิด Messaging API เพื่อให้เกิด channel; ปัจจุบันไม่สร้าง Messaging API channel ด้วยปุ่ม Create channel ใน Developers Console แล้ว [LINE Messaging API setup](https://developers.line.biz/en/docs/messaging-api/getting-started/)
+LINE Login and Messaging API use separate channels. Create a LINE Official Account in [Official Account Manager](https://manager.line.biz/) and enable Messaging API to create its channel. Messaging API channels are no longer created through the Developers Console's Create channel button. See the [LINE Messaging API setup guide](https://developers.line.biz/en/docs/messaging-api/getting-started/).
 
-เลือก provider เดียวกับ LINE Login ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` และ `LINE_CHANNEL_SECRET` จาก Messaging API channel บน backend เท่านั้น หลังตรวจใน console ว่าทั้งสอง channel อยู่ใต้ provider เดียวกันจึงตั้ง `LINE_MESSAGING_SAME_PROVIDER=true` เพราะ user IDs เหมือนกันเฉพาะภายใต้ provider เดียว ไม่ใช่ LINE ID ที่ผู้ใช้พิมพ์เอง [LINE user IDs](https://developers.line.biz/en/docs/messaging-api/getting-user-ids/)
+Choose the same provider as LINE Login. Configure `LINE_CHANNEL_ACCESS_TOKEN` and `LINE_CHANNEL_SECRET` from the Messaging API channel on the backend only. Set `LINE_MESSAGING_SAME_PROVIDER=true` after confirming that both channels are under the same provider. User IDs match only within the same provider; they are not the LINE ID typed by a user. See [LINE user IDs](https://developers.line.biz/en/docs/messaging-api/getting-user-ids/).
 
-ตั้ง webhook เป็น `https://api.<โดเมนของคุณ>/api/notifications/line/webhook` ที่เข้าถึงจาก LINE ได้ เปิด Use webhook และใช้ Verify ใน console ระบบตรวจ `x-line-signature` ด้วย Messaging API channel secret จาก raw body ก่อนอ่าน event; ไม่เปลี่ยน body ก่อนตรวจ [Webhook signature verification](https://developers.line.biz/en/docs/messaging-api/verify-webhook-signature/)
+Set the webhook to a publicly reachable endpoint such as `https://api.your-domain.example/api/notifications/line/webhook`, enable Use webhook, and run Verify in the console. The backend verifies `x-line-signature` against the raw request body using the Messaging API channel secret before reading events; the body must not be modified first. See [webhook signature verification](https://developers.line.biz/en/docs/messaging-api/verify-webhook-signature/).
 
-ผู้ใช้ต้องเชื่อมบัญชี LINE ของตน, เพิ่ม Official Account เป็นเพื่อน และเลือกเปิด notifications ในแอพเอง ระบบจึงส่งเฉพาะผล HIGH ที่ผู้ใช้เลือกบันทึกโดยอัตโนมัติ `LINE_OFFICIAL_ACCOUNT_ID` ใช้สำหรับลิงก์เพิ่มเพื่อน การเปิด login ไม่ได้เท่ากับยินยอมรับข้อความ ข้อความมีคะแนน/ระดับ/เวลา/ข้อจำกัด โดยไม่ส่ง input, URL หรือ identifier เดิม หากไม่มี credentials จะไม่ส่งข้อความจริง ตรวจ quota/สิทธิ์ส่งของ Official Account ก่อนใช้งานจริง; provider ยอมรับคำขอไม่ได้ยืนยันว่าอ่านหรือได้รับข้อความแล้ว [Messaging API reference](https://developers.line.biz/en/reference/messaging-api/#send-push-message)
+A user must link their own LINE account, add the Official Account as a friend, and explicitly enable notifications in the app. The service then sends alerts only for HIGH-risk results the user chooses to save. `LINE_OFFICIAL_ACCOUNT_ID` supplies the add-friend link. Login alone is not notification consent. Messages contain the score, level, timestamp, and limitations, without the original input, URL, or identifier. Missing credentials prevent real messages from being sent. Check the Official Account's quota and sending permissions before activation; provider acceptance does not prove delivery or that a recipient read the message. See the [Messaging API reference](https://developers.line.biz/en/reference/messaging-api/#send-push-message).
 
-ยังไม่ได้ทดสอบ Google/LINE consent ด้วย credentials จริงหรือส่งข้อความไปยังผู้ใช้ LINE จริงในเครื่องนี้ การทดสอบ provider แบบ mock เป็น contract/security tests ไม่ใช่ external integration ที่ผ่านแล้ว
+Real Google/LINE consent flows and messages to real LINE users have not been tested with live credentials in this environment. Mock-provider checks are contract/security tests, not verified external integrations.
 
-### สถานะสายเรียกเข้าบน native
+### Native Incoming-Call Identification
 
-โมดูล `app/modules/scamgraph-caller` และ config plugin `app/plugins/withScamGraphCaller.js` ใช้ cache เบอร์ที่มีหลักฐานตรวจแล้วและไม่ใช่ sample ชุดข้อมูล demo ไม่เข้าสู่ caller cache เบอร์ไม่พบ/ข้อมูลหมดอายุเป็น insufficient data และไม่แปลว่าปลอดภัย; ไม่มีการบล็อกสายอัตโนมัติ
+`app/modules/scamgraph-caller` and `app/plugins/withScamGraphCaller.js` cache non-sample phone records with reviewed evidence. Demo data never enters the caller cache. An absent or expired record does not establish safety. Lookup results without sufficient evidence are inconclusive; iOS identification labels only numbers loaded in its directory. Calls are not blocked automatically. The verified caller directory currently contains **0 real records**; sample or pending records are excluded.
 
-`CALLER_DIRECTORY_TTL_HOURS` default 6 ชั่วโมง และ `CALLER_DIRECTORY_MAX_AGE_DAYS` default 90 วัน จำกัดความสดของ cache/หลักฐาน แอพ refresh เฉพาะเมื่อผู้ใช้เปิดฟังก์ชันและ clear cache เมื่อปิด รุ่นโมเดลทดลองข้อความ/URL ไม่ได้สร้างเปอร์เซ็นต์ความแม่นยำสำหรับ caller identification
+`CALLER_DIRECTORY_TTL_HOURS` defaults to 6 hours and `CALLER_DIRECTORY_MAX_AGE_DAYS` to 90 days, limiting cache/evidence freshness. The app refreshes only while the user has enabled the feature and clears the cache when it is disabled. Experimental text/URL models do not provide a caller-identification accuracy percentage.
 
-บน iOS การตรวจ expiry เกิดเมื่อ extension โหลด directory ใหม่ ตาม flow นี้ label ที่ OS โหลดไว้ก่อนหน้าอาจค้างจนมี reload/refresh เมื่อกลับเข้าแอพ TTL จึงไม่ใช่คำรับรองว่า OS ถอน label ทันทีที่หมดอายุ Label แสดงแหล่งข้อมูลและวันที่เพื่อให้เห็นอายุหลักฐาน
+On iOS, expiry is checked when the extension reloads its directory. Previously loaded OS labels may remain until a reload/refresh when the user returns to the app. TTL is not a guarantee that iOS removes a label immediately at expiry. Labels include the source and date to expose the evidence's age.
 
-| Platform | พฤติกรรมที่รองรับ |
+| Platform | Supported behavior |
 |---|---|
-| Android 10+ | ผู้ใช้เลือกเปิด `ROLE_CALL_SCREENING`; service อนุญาตสายทันที แล้ว lookup cache แบบ offline และแจ้งเตือนตามข้อมูลที่มี Android 13+ ต้องยินยอม notification แยก |
-| iOS | Call Directory extension `.appex` + App Group แสดง identification จากรายการ E.164 ที่ตรวจแล้ว ผู้ใช้ต้องเปิด extension ใน Settings; JavaScript ไม่ได้รับเหตุการณ์โทรเข้าหรือเบอร์โทรแบบ live |
-| เว็บ / Expo Go | unavailable; ไม่ดักสาย ไม่แสดงว่าเปิดระบบป้องกันแล้ว |
+| Android 10+ | The user enables `ROLE_CALL_SCREENING`. The service immediately allows the call, then looks up the offline cache and notifies based on available evidence. Android 13+ requires separate notification permission. |
+| iOS | A Call Directory `.appex` extension and App Group identify reviewed E.164 numbers. The user enables the extension in Settings; JavaScript does not receive live incoming-call events or phone numbers. |
+| Web / Expo Go | Unavailable. Calls are not intercepted, and the UI does not claim that protection is enabled. |
 
-โค้ด Android ไม่ขอ READ_CALL_LOG/READ_PHONE_STATE/READ_CONTACTS/overlay ไม่อ่านประวัติหรือบทสนทนา OS อาจไม่ส่งสายบางประเภท/เบอร์ที่ปกปิดให้ service; จึงไม่ครอบคลุมทุกสาย [Android CallScreeningService](https://developer.android.com/reference/android/telecom/CallScreeningService) iOS ใช้ข้อจำกัดของ Call Directory ตามระบบ ไม่ทำ popup โทรเข้าจาก React Native [Apple caller identification](https://developer.apple.com/documentation/callkit/identifying-and-blocking-calls)
+Android code does not request READ_CALL_LOG/READ_PHONE_STATE/READ_CONTACTS/overlay access and does not read call history or conversations. The OS may withhold some call types/hidden numbers from the service, so coverage is not universal. See [Android CallScreeningService](https://developer.android.com/reference/android/telecom/CallScreeningService). iOS follows Call Directory restrictions and does not create React Native incoming-call popups; see [Apple caller identification](https://developer.apple.com/documentation/callkit/identifying-and-blocking-calls).
 
-ต้องติดตั้ง Android Studio/SDK/JDK สำหรับ Android หรือ Xcode/CocoaPods สำหรับ iOS และ build แอพที่มี native module นี้ เช่น จาก monorepo root:
+Install Android Studio/SDK/JDK for Android, or Xcode/CocoaPods for iOS, then build the app with the native module. With the shared `npm run dev` server running, use `npm run android -- --device` or `npm run ios -- --device` from the root; these commands avoid starting a second Metro server. The following standalone alternative starts its own bundler:
 
 ```bash
 source scripts/env.sh
 cd app
 npx expo run:android --device
-# หรือบน macOS ที่มี Xcode และ signing พร้อม
+# Alternatively, on macOS with Xcode and signing configured:
 npx expo run:ios --device
 ```
 
-คำสั่งจะทำ prebuild เมื่อยังไม่มี native project ใช้ bundle ID `ai.scamgraph.app` และ App Group `group.ai.scamgraph.app` กับ target `ScamGraphCallerDirectory` ตาม config plugin ต้องตั้ง provisioning/signing ให้ตรงทั้งแอพและ extension แล้วเปิดสิทธิ์ผ่าน Settings บนเครื่องจริง เมื่อเปลี่ยน native dependency/config ให้ regenerate ตาม [Expo development-build guide](https://docs.expo.dev/develop/development-builds/introduction/)
+These commands prebuild when a native project is absent. The config plugin uses bundle ID `ai.scamgraph.app`, App Group `group.ai.scamgraph.app`, and the `ScamGraphCallerDirectory` target. Provision/sign both the host and extension consistently, then enable permissions in device Settings. Regenerate native projects after native dependency/configuration changes; see the [Expo development-build guide](https://docs.expo.dev/develop/development-builds/introduction/).
 
-ตรวจ full iOS Simulator Debug host พร้อม embedded Call Directory extension ผ่านแล้ว และติดตั้ง/เปิดแอพบน iPhone 17 Simulator (iOS 26.5) ด้วย local ad-hoc signing โดยใช้ Metro ร่วมกับเว็บ การเปิดแบบ unsigned ทำให้ SecureStore อ่าน Keychain ไม่ได้ จึงต้องใช้ build ที่มี application entitlements ตามปกติ ตรวจหน้าล็อกอิน เข้า Dashboard และวิเคราะห์ข้อความผ่าน API ร่วมได้โดยไม่มีข้อผิดพลาด Keychain แล้ว ส่วน physical-device signing/installation, release IPA และสายโทรเข้าจริงยังไม่ได้ตรวจ
+A full iOS Simulator Debug host with the embedded Call Directory extension was built, installed, and launched on iPhone 17 Simulator (iOS 26.5), using local ad-hoc signing and the shared Metro server. The initial unsigned build lacked application entitlements and could not read SecureStore/Keychain. A normal Simulator build restored those entitlements; login-screen startup, Dashboard access, and text analysis through the shared API were verified without the Keychain error. Physical-device signing/installation, release IPA packaging, and real incoming calls remain unverified.
 
-ไม่ตั้ง LLM key แอพใช้คำอธิบาย template จาก structured evidence และยังใช้งานได้ หากตั้ง `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` ผ่าน environment จะเรียก endpoint ที่เข้ากันกับ `/chat/completions` โดยให้เลือก evidence IDs ที่มีอยู่แล้วเท่านั้น ถ้า timeout/ตอบผิด format จะ fallback และแสดงสถานะ ไม่มีการนำ provider prose มาเพิ่มประวัติหรือแหล่งอ้างอิงที่ไม่อยู่ในระบบ
+### LLM Explanations and Intelligence Sources
 
-Known intelligence ใช้ข้อมูลภายในและ import CSV/JSON พร้อม source, retrieved_at, evidence, verification status ไม่มีการปลอม integration กับเว็บที่ไม่มี API ไม่มี domain age/reputation live provider ที่แถมมา แหล่งภายนอกต้องมีสิทธิ์และ credentials/configuration ก่อนใช้งาน
+Without an LLM key, the app uses working explanation templates grounded in structured evidence. Setting `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` enables an optional `/chat/completions`-compatible endpoint, constrained to existing evidence IDs. Timeout or invalid output falls back to the template and displays the state. Provider prose does not create new history or unsupported source references.
 
-CSV สำหรับ intelligence source ใช้ `entity_type,value,status,evidence` โดย `status` เป็น `reported` หรือ `confirmed`; เพิ่ม `retrieved_at` และ `related_entities` (JSON array) ได้ แยกจาก CSV batch ซึ่งใช้ `text,kind` และ CSV training ซึ่งต้องมี label/source/campaign metadata
+Known intelligence uses internal records and CSV/JSON imports with source, `retrieved_at`, evidence, and verification status. No integration is fabricated for websites without an API. No live domain-age/reputation provider is included; external sources require authorization and credentials/configuration.
 
-OCR บน Docker ใช้ Tesseract `tha+eng`; บน macOS ARM64 bootstrap ติดตั้ง Tesseract 5.5.0 แบบ project-local ที่ `.runtime/ocr` จาก conda-forge packages ที่ล็อก URL/SHA256 ใน `ocr-runtime.lock.json` โดยไม่ติดตั้งลงระบบหรือรัน package hooks เมื่อไม่มี Tesseract มี Apple Vision fallback หาก native OCR ใช้งานได้ หาก OCR/provider ไม่พร้อม UI ต้องแจ้งสถานะและให้วางข้อความเองได้ กล้อง/QR บน native ต้องได้รับสิทธิ์จากผู้ใช้ ภาพอ่านไม่ออกและ QR ไม่พบเป็นผลที่รองรับ
+Intelligence-source CSV uses `entity_type,value,status,evidence`, with `status` set to `reported` or `confirmed`; optional fields include `retrieved_at` and `related_entities` (a JSON array). This is separate from batch CSV (`text,kind`) and training CSV (label/source/campaign metadata).
 
-## ตรวจระบบและส่งมอบ
+### OCR and Media Availability
+
+Docker uses Tesseract `tha+eng`. On macOS ARM64, bootstrap installs project-local Tesseract 5.5.0 under `.runtime/ocr` from conda-forge packages whose URLs/SHA256 hashes are pinned in `ocr-runtime.lock.json`, without system installation or package hooks. If Tesseract is absent, Apple Vision may provide a fallback when native OCR is available. When OCR/providers are unavailable, the UI reports that state and allows manual text entry. Native camera/QR use requires user permission. Unreadable images and “QR not found” are supported outcomes.
+
+## Verification and Delivery
 
 ```bash
 bash scripts/run_checks.sh
 ```
 
-คำสั่งนี้ตรวจ dependencies/imports, รัน backend/ML tests, validate/evaluate artifacts, ส่งออก OpenAPI, TypeScript typecheck และ Expo web build ผลที่รันจริงและข้อจำกัดของ environment อยู่ใน `QA_RESULTS.md` ห้ามตีความว่ามีการทดสอบ Docker/native device/provider ภายนอกแล้วเพียงเพราะมี configuration
+This checks dependencies/imports, runs backend/ML tests, validates/evaluates artifacts, exports OpenAPI, checks TypeScript, runs client-flow and service-worker tests, and builds the Expo web bundle. Executed results and environment limitations are documented in `QA_RESULTS.md`. Configuration files alone do not establish that Docker, physical native devices, or external providers were tested.
 
 ```bash
 .venv/bin/python scripts/package_delivery.py
 ```
 
-สร้าง `../scamgraph-ai.zip` เฉพาะ source, lockfiles, safe demo assets และโมเดลที่ฝึกขนาดเล็ก ไม่รวม `.env`, `.venv`, `node_modules`, runtime database, cache, logs หรือ pretrained weights
+This creates `../scamgraph-ai.zip` containing source, lockfiles, safe demo assets, and small trained models. It excludes `.env`, `.venv`, `node_modules`, runtime databases, caches, logs, and large pretrained weights.
 
-ข้อจำกัดที่ต้องจัดเตรียมก่อนใช้กับผู้ใช้จริง: dataset ที่มีสิทธิ์และตรวจ labels, calibration/evaluation กับข้อมูลจริง, external intelligence adapters ที่ได้รับอนุญาต, production job queue/การจำกัดความถี่แบบ distributed, กระบวนการ moderation และการเก็บรักษาข้อมูลส่วนบุคคล รวมถึงการทดสอบบนอุปกรณ์ Android/iOS และ PostgreSQL deployment จริง
+Before real-user deployment, prepare authorized and labeled datasets, calibration/evaluation on real data, licensed external-intelligence adapters, a production job queue and distributed rate limiting, moderation and personal-data retention processes, physical Android/iOS device tests, and a verified PostgreSQL deployment.
 
-ตรวจ client flows เพิ่มเติม: `cd app && npm run test:flows` (8 OAuth + 4 privacy checks ของ source จริง โดย mock HTTP/platform/hooks). การออกจากระบบล้างข้อมูลบนหน้าจอทันที และผลที่ตอบกลับช้าจากบัญชีเดิมจะไม่เปิดกลับมา.
+Additional client checks: `cd app && npm run test:flows` runs **26 checks** (8 OAuth, 14 App privacy/integrity, and 4 ReportsPage checks), using real source actions with mocked HTTP/platform/hooks. Logout clears private screen state immediately. Late responses from a previous account or replaced analysis/job do not reopen old results or trigger stale exports.
