@@ -140,6 +140,50 @@ def test_opt_in_history_ownership_masks_exports(client,auth):
     assert client.get(f"/api/history/{row['id']}/export?format=csv",headers=auth).status_code==200
     assert client.delete(f"/api/history/{row['id']}",headers=auth).status_code==200
 
+def test_persisted_history_report_job_timestamps_are_utc(client,auth,admin):
+    from datetime import datetime,timezone
+    def timestamp(value):
+        parsed=datetime.fromisoformat(value.replace("Z","+00:00"))
+        assert parsed.tzinfo is not None, value
+        assert parsed.utcoffset().total_seconds()==0, value
+        return parsed
+    saved=client.post("/api/history",json={"text":"Meeting tomorrow at ten"},headers=auth).json()
+    # A subsequent request reloads SQLite rows, whose DateTime loses tzinfo.
+    read=client.get(f"/api/history/{saved['id']}",headers=auth).json()
+    assert abs((timestamp(read["created_at"])-timestamp(read["result"]["checked_at"])).total_seconds())<30
+    assert timestamp(read["created_at"])==timestamp(saved["created_at"])
+    listed=client.get("/api/history",headers=auth).json()["items"][0]
+    assert timestamp(listed["created_at"])==timestamp(read["created_at"])
+    exported=client.get(f"/api/history/{saved['id']}/export",headers=auth).json()
+    assert timestamp(exported["created_at"])==timestamp(read["created_at"])
+    timestamp(client.get("/api/auth/me",headers=auth).json()["created_at"])
+    report=client.post("/api/reports",json={"text":f"https://time-{uuid4().hex}.test","kind":"url","detail":"Fictional timestamp test report"},headers=auth).json()
+    timestamp(client.get("/api/reports",headers=auth).json()["items"][0]["created_at"])
+    reviewed=client.patch(f"/api/admin/reports/{report['id']}",json={"status":"rejected","reason":"Fictional timestamp test only"},headers=admin).json()
+    timestamp(reviewed["reviewed_at"])
+    timestamp(client.get("/api/reports",headers=auth).json()["items"][0]["reviewed_at"])
+    job=client.post("/api/batch",files={"file":("time.csv",b"text,kind\nMeeting tomorrow at ten,text\n","text/csv")},headers=auth).json()
+    completed=client.get(f"/api/jobs/{job['id']}",headers=auth).json()
+    assert timestamp(completed["finished_at"])>=timestamp(completed["created_at"])
+    timestamp(client.get("/api/admin/audit",headers=admin).json()["items"][0]["created_at"])
+
+def test_source_timestamp_offset_preserved_and_serialized_utc(client,admin):
+    from datetime import datetime,timedelta,timezone
+    from backend.app.db import utc_datetime,utc_isoformat
+    assert utc_isoformat(datetime(2026,6,1,5,30))=="2026-06-01T05:30:00+00:00"
+    local=datetime(2026,6,1,12,30,tzinfo=timezone(timedelta(hours=7)))
+    assert utc_datetime(local)==datetime(2026,6,1,5,30,tzinfo=timezone.utc)
+    name=f"Fictional timezone source {uuid4().hex}"
+    source=client.post("/api/admin/sources",json={"name":name,"is_sample":True},headers=admin).json()
+    records=[{"entity_type":"domain","value":"timezone-import.example","status":"confirmed","evidence":"Fictional timestamp test only","retrieved_at":local.isoformat()}]
+    imported=client.post(f"/api/admin/sources/{source['id']}/import",files={"file":("time.json",json.dumps(records).encode(),"application/json")},headers=admin)
+    assert imported.status_code==200,imported.text
+    graph=client.get("/api/graph",params={"include_sample":True,"entity_type":"domain","entity_value":"timezone-import.example"}).json()
+    edges=[edge for edge in graph["edges"] if edge["provenance"]==name]
+    assert edges and all(edge["retrieved_at"]=="2026-06-01T05:30:00+00:00" for edge in edges)
+    fetched=next(item for item in client.get("/api/admin/sources",headers=admin).json()["items"] if item["id"]==source["id"])
+    assert datetime.fromisoformat(fetched["created_at"]).utcoffset().total_seconds()==0
+
 def test_pending_reports_not_threats_then_reviewed_audited(client,auth,admin):
     text=f"https://report-{uuid4().hex}.test/verify"
     body={"text":text,"kind":"url","detail":"Fictional test report with screenshot evidence explained"}

@@ -6,7 +6,23 @@
 
 คะแนน 0–100 ยังไม่ calibrate จึงไม่ใช่เปอร์เซ็นต์โอกาสโกง “ไม่พบประวัติ” ไม่ได้หมายถึงปลอดภัย และความสัมพันธ์ในกราฟหรือความคล้ายของข้อความไม่ใช่การยืนยันว่าบุคคลใดโกง
 
-Branding อิงภาพ `ScamGraph AI.png` ที่ผู้ใช้ให้ล่าสุด: สัญลักษณ์ S, network nodes และ shield/check พร้อม purple–blue–cyan gradient และโหมด light/dark แทน shield ชั่วคราว โลโก้เป็น reference-derived raster interpretation ที่สร้างด้วย ImageGen ไม่ใช่การตัดพิกเซลเดิมหรือ vector original; palette หลักใช้ midnight navy/purple และคงสีความเสี่ยงตามความหมาย รายละเอียด masters, exports และ prompts อยู่ใน `app/assets/BRAND.md`
+Branding อิงภาพ `ScamGraph AI.png` ที่ผู้ใช้ให้ล่าสุด: สัญลักษณ์ S, network nodes และ shield/check พร้อม purple–blue–cyan gradient และโหมด light/dark แทน shield ชั่วคราว โลโก้เป็น reference-derived raster interpretation ที่สร้างด้วย ImageGen ไม่ใช่การตัดพิกเซลเดิมหรือ vector original; palette หลักใช้ pale blue/white และน้ำเงิน–ม่วง พร้อม midnight navy สำหรับ dark mode และคงสีความเสี่ยงตามความหมาย รายละเอียด masters, exports และ prompts อยู่ใน `app/assets/BRAND.md`
+
+## UI และ Webapp เวอร์ชันล่าสุด
+
+ปรับตามภาพหน้าจอมือถือ/เว็บที่ผู้ใช้ให้: หน้าเปิดเป็นโลโก้และตัวเลือกล็อกอิน Google, LINE, อีเมล และสมัครบัญชี หน้า Dashboard มีการ์ดสแกน 4 หมวด มือถือใช้เมนูด้านล่าง เว็บใช้เมนูด้านซ้าย โทนเริ่มต้นเป็นขาว–ฟ้า ปุ่มไล่สีน้ำเงิน–ม่วง และสลับ dark mode/ภาษาได้ เอฟเฟกต์เข้าแสดงผลจบในช่วงสั้นและเคารพ reduced-motion ของระบบ ปุ่มมี hover/focus glow โดยไม่ซ่อนตัวเลือกเข้าสู่ระบบ
+
+Dashboard/กราฟ 7 วันคำนวณจากประวัติส่วนตัวที่บันทึกจริงสูงสุด 300 รายการ หน้าแจ้งเตือนเปิดผล HIGH ที่บันทึกไว้ และศูนย์ช่วยเหลือค้นหาคำถามได้ Webapp มี manifest/ไอคอน/service worker สำหรับ browser ที่รองรับ การอัปเดตรอผู้ใช้กดก่อนโหลดหน้าใหม่ แคชเฉพาะไฟล์แอพสาธารณะ ไม่แคช API/ผลตรวจ/รูปอัปโหลด การวิเคราะห์และข้อมูลส่วนตัวยังต้องออนไลน์
+
+ผู้ใช้ยืนยันว่ายังไม่มีโครงการ Google Cloud/LINE จึงยังไม่ได้เปิด provider จริง อ่าน [คู่มือเปิดการเชื่อมต่อ](ACTIVATION.md), [Webapp](WEBAPP.md), [สถานะแต่ละฟังก์ชัน](FUNCTION_STATUS.md) และ [ผลทดสอบ](QA_RESULTS.md) ก่อนเปิดใช้งานจริง
+
+## โค้ดร่วม App + Web และการอัปเดต
+
+Repository หลักคือ `Hard2Coding/UHackathon` branch `DevTutor` ทั้งมือถือและเว็บใช้ `app/App.tsx`, `app/src` และ `shared` ร่วมกัน API/โมเดลอยู่ใน `backend`/`ml` ไม่ต้องคัดลอกหน้าจอไปสองโครงการ
+
+หลังติดตั้ง dependencies แล้ว รัน `npm run dev` ที่ราก repo เพื่อเปิด API reload และ Expo Metro ตัวเดียวสำหรับเว็บและ native development client แก้ source แล้วทั้งสองฝั่งรับโค้ดเดียวกัน คำสั่ง `npm run ios` / `npm run android` build/install native โดยใช้ Metro ที่เปิดไว้ ดู [DEVELOPMENT.md](DEVELOPMENT.md) สำหรับ LAN IP และพอร์ต
+
+เว็บรองรับ Vercel โดย Import repo ที่รากและตั้ง `EXPO_PUBLIC_API_URL` เป็น HTTPS backend จริง อ่าน [VERCEL.md](VERCEL.md) เมื่อเชื่อม Git แล้ว Vercel build/deploy จาก branch ที่ติดตามตามการตั้งค่าโครงการ GitHub Actions ตรวจและ export เว็บ/Android/iOS พร้อม Git SHA เดียวกัน ส่วน OTA ไปแอพที่ติดตั้งต้องตั้ง Expo project/updates/runtime ก่อน ดู [RELEASES.md](RELEASES.md)
 
 ## โครงสร้าง
 

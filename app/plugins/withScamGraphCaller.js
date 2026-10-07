@@ -1,10 +1,33 @@
 const fs = require('fs');
 const path = require('path');
-const { withAndroidManifest, withEntitlementsPlist, withInfoPlist, withXcodeProject } = require('expo/config-plugins');
+const { withAndroidManifest, withEntitlementsPlist, withInfoPlist, withPodfile, withXcodeProject } = require('expo/config-plugins');
 
 function unquote(value) { return String(value || '').replace(/^"|"$/g, ''); }
 function escapeXml(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function xmlPlist(body) { return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict>${body}</dict></plist>\n`; }
+
+// Some dependency resource targets retain an older minimum than the Expo host.
+// Keep them compatible with current SDKs without changing host/extension support.
+function ensurePodMinimumDeploymentTarget(contents) {
+  const tag = 'scamgraph-pod-minimum';
+  const prior = new RegExp(`^[ \\t]*# @generated begin ${tag}\\r?\\n[\\s\\S]*?^[ \\t]*# @generated end ${tag}\\r?\\n?`, 'gm');
+  const clean = contents.replace(prior, '');
+  const anchor = /^([ \t]*)react_native_post_install\([\s\S]*?^\1\)\r?$/m;
+  if (!anchor.test(clean)) throw new Error('Caller plugin requires the Expo react_native_post_install hook in Podfile');
+  return clean.replace(anchor, (call, indent) => `${call}
+${indent}# @generated begin ${tag}
+${indent}scamgraph_ios_minimum = Gem::Version.new(podfile_properties['ios.deploymentTarget'] || '15.1')
+${indent}installer.pods_project.targets.each do |pod_target|
+${indent}  pod_target.build_configurations.each do |configuration|
+${indent}    current = configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_s
+${indent}    next unless current.match?(/\\A\\d+(?:\\.\\d+)*\\z/)
+${indent}    if Gem::Version.new(current) < scamgraph_ios_minimum
+${indent}      configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = scamgraph_ios_minimum.to_s
+${indent}    end
+${indent}  end
+${indent}end
+${indent}# @generated end ${tag}`);
+}
 
 function withScamGraphCaller(config, options = {}) {
   const extensionName = options.extensionName || 'ScamGraphCallerDirectory';
@@ -49,6 +72,11 @@ function withScamGraphCaller(config, options = {}) {
   config = withEntitlementsPlist(config, mod => {
     const key = 'com.apple.security.application-groups';
     mod.modResults[key] = [...new Set([...(mod.modResults[key] || []), appGroup])];
+    return mod;
+  });
+
+  config = withPodfile(config, mod => {
+    mod.modResults.contents = ensurePodMinimumDeploymentTarget(mod.modResults.contents);
     return mod;
   });
 
@@ -141,3 +169,4 @@ function withScamGraphCaller(config, options = {}) {
 }
 
 module.exports = withScamGraphCaller;
+module.exports.ensurePodMinimumDeploymentTarget = ensurePodMinimumDeploymentTarget;

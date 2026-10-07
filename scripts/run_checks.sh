@@ -13,4 +13,5 @@ export DATABASE_URL="sqlite:///$(pwd)/.runtime/checks.db"
 cd app
 npm run typecheck
 npm run test:flows
+npm run test:webapp
 npm run build

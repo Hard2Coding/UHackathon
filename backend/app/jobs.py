@@ -7,13 +7,13 @@ import shutil
 import threading
 from pathlib import Path
 from sqlalchemy import select
-from .db import Job, SessionLocal, utcnow
+from .db import Job, SessionLocal, utcnow, utc_isoformat
 from . import services
 
 training_lock=threading.Lock()
 
 def job_dict(job):
-    return {"id":job.id,"kind":job.kind,"status":job.status,"progress":job.progress,"result":copy.deepcopy(job.result),"error":job.error,"created_at":job.created_at.isoformat(),"finished_at":job.finished_at.isoformat() if job.finished_at else None}
+    return {"id":job.id,"kind":job.kind,"status":job.status,"progress":job.progress,"result":copy.deepcopy(job.result),"error":job.error,"created_at":utc_isoformat(job.created_at),"finished_at":utc_isoformat(job.finished_at)}
 
 def parse_rows(data, filename):
     text=data.decode("utf-8-sig")

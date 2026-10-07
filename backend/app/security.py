@@ -8,7 +8,7 @@ from uuid import uuid4
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
-from .db import SessionToken, User, get_db, utcnow
+from .db import SessionToken, User, get_db, utcnow, utc_isoformat
 
 auth_scheme = HTTPBearer(auto_error=False)
 
@@ -71,4 +71,4 @@ def client_limit(request: Request, category="analysis", limit=30):
     limiter.check(f"{category}:{request.client.host if request.client else 'local'}", limit)
 
 def user_dict(user):
-    return {"id": user.id, "email": user.email, "email_is_placeholder":user.email.endswith("@identity.scamgraph.invalid"), "name": user.name, "role": user.role, "created_at": user.created_at.isoformat()}
+    return {"id": user.id, "email": user.email, "email_is_placeholder":user.email.endswith("@identity.scamgraph.invalid"), "name": user.name, "role": user.role, "created_at": utc_isoformat(user.created_at)}

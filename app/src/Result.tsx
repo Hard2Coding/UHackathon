@@ -60,12 +60,26 @@ export function Result({
   const [technical, setTechnical] = useState(false);
   const tone =
     result.level === "HIGH"
-      ? dark ? "#ff9fa6" : "#b84450"
+      ? dark ? "#ffadbf" : "#bc3452"
       : result.level === "MEDIUM"
-        ? dark ? "#f7d789" : "#a77a22"
+        ? dark ? "#f7d789" : "#986417"
         : result.level === "LOW"
-          ? c.teal
+          ? dark ? "#76e2c6" : "#16806b"
           : c.muted;
+  const riskBackground = result.level === "HIGH"
+    ? dark ? "#372438" : "#fff2f5"
+    : result.level === "MEDIUM"
+      ? dark ? "#322b23" : "#fff8e9"
+      : result.level === "LOW"
+        ? dark ? "#12352f" : "#ecfbf6"
+        : c.soft;
+  const riskBorder = result.level === "HIGH"
+    ? dark ? "#664158" : "#f6d5df"
+    : result.level === "MEDIUM"
+      ? dark ? "#605334" : "#efdfb8"
+      : result.level === "LOW"
+        ? dark ? "#285448" : "#c8ebe2"
+        : c.line;
   const Icon =
     result.level === "HIGH"
       ? ShieldAlert
@@ -88,6 +102,7 @@ export function Result({
         }}
       >
         <Pressable
+          accessibilityRole="button"
           onPress={onBack}
           style={{ flexDirection: "row", gap: 8, alignItems: "center" }}
         >
@@ -103,7 +118,7 @@ export function Result({
           · {result.input_kind}
         </Txt>
       </View>
-      <Panel style={{ padding: 28 }}>
+      <Panel style={{ padding: width < 600 ? 22 : 28, backgroundColor: riskBackground, borderColor: riskBorder, overflow: "hidden" }}>
         <View
           style={{
             flexDirection: width >= 780 ? "row" : "column",
@@ -115,6 +130,7 @@ export function Result({
             style={{
               alignItems: "center",
               alignSelf: width < 780 ? "center" : "auto",
+              minWidth: 165,
             }}
           >
             <Svg width={165} height={165} viewBox="0 0 165 165">
@@ -144,9 +160,10 @@ export function Result({
                 x="82"
                 y="86"
                 fontSize="34"
+                fontFamily="ThaiBold"
                 fontWeight="bold"
                 textAnchor="middle"
-                fill={c.ink}
+                fill={tone}
               >
                 {score === null ? "—" : score.toFixed(2)}
               </SvgText>
@@ -155,6 +172,7 @@ export function Result({
                 y="110"
                 textAnchor="middle"
                 fontSize="10"
+                fontFamily="Thai"
                 fill={c.muted}
               >
                 {t("คะแนนความเสี่ยง / 100", "RISK SCORE / 100")}
@@ -163,12 +181,13 @@ export function Result({
           </View>
           <View style={{ flex: 1, gap: 11 }}>
             <View
-              style={{ flexDirection: "row", gap: 8, alignItems: "center" }}
+              style={{ flexDirection: "row", gap: 13, alignItems: "center" }}
             >
-              <Icon size={21} color={tone} />
-              <Txt bold size={25} style={{ color: tone }}>
-                {levelCopy(result.level, english)}
-              </Txt>
+              <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: dark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: riskBorder }}><Icon size={31} color={tone} /></View>
+              <View style={{ flex: 1 }}>
+                <Txt muted size={10}>{t("สรุปผลการตรวจสอบ", "ANALYSIS SUMMARY")}</Txt>
+                <Txt bold size={24} style={{ color: tone }}>{levelCopy(result.level, english)}</Txt>
+              </View>
             </View>
             <Txt size={15}>
               {english
@@ -208,7 +227,7 @@ export function Result({
         <View
           style={{
             borderTopWidth: 1,
-            borderColor: c.line,
+            borderColor: riskBorder,
             paddingTop: 20,
             marginTop: 22,
             flexDirection: "row",
@@ -225,7 +244,7 @@ export function Result({
           <Button small secondary onPress={onExport} icon={Download}>
             {t("ส่งออก", "Export")}
           </Button>
-          <Button small secondary onPress={onReport} icon={Flag}>
+          <Button small secondary={result.level !== "HIGH"} danger={result.level === "HIGH"} onPress={onReport} icon={Flag}>
             {t("แจ้งเบาะแส", "Report a clue")}
           </Button>
         </View>

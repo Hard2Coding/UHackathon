@@ -7,7 +7,7 @@ import math
 import re
 import secrets
 import time
-from datetime import timedelta,timezone
+from datetime import timedelta
 from urllib.parse import urlencode,urlsplit,urlunsplit,parse_qsl
 from uuid import uuid4
 import httpx
@@ -16,7 +16,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel,Field
 from sqlalchemy import delete,select,update
 from sqlalchemy.exc import IntegrityError
-from .db import OAuthState,OAuthExchange,ProviderIdentity,User,get_db,utcnow
+from .db import OAuthState,OAuthExchange,ProviderIdentity,User,get_db,utcnow,utc_datetime,utc_isoformat
 from .security import client_limit,current_user,issue_token,optional_user,token_digest,user_dict
 from .schemas import UserResponse
 
@@ -24,7 +24,7 @@ router=APIRouter(prefix="/api/auth",tags=["OIDC authentication"])
 PROVIDERS={"google":{"authorize":"https://accounts.google.com/o/oauth2/v2/auth","token":"https://oauth2.googleapis.com/token","env":("GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET","GOOGLE_REDIRECT_URI"),"scope":"openid email profile"},"line":{"authorize":"https://access.line.me/oauth2/v2.1/authorize","token":"https://api.line.me/oauth2/v2.1/token","env":("LINE_LOGIN_CHANNEL_ID","LINE_LOGIN_CHANNEL_SECRET","LINE_REDIRECT_URI"),"scope":"openid profile"}}
 
 def aware(value):
-    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+    return utc_datetime(value)
 
 def timeout_seconds():
     try: return min(15,max(1,float(os.getenv("OAUTH_HTTP_TIMEOUT_SECONDS","5"))))
@@ -233,4 +233,4 @@ def redeem(body:OAuthExchangeRequest,request:Request,db=Depends(get_db)):
 @router.get("/identities",response_model=dict)
 def identities(user=Depends(current_user),db=Depends(get_db)):
     rows=db.scalars(select(ProviderIdentity).where(ProviderIdentity.user_id==user.id)).all()
-    return {"providers":[row.provider for row in rows],"items":[{"provider":row.provider,"email_verified":row.email_verified,"created_at":row.created_at.isoformat()} for row in rows]}
+    return {"providers":[row.provider for row in rows],"items":[{"provider":row.provider,"email_verified":row.email_verified,"created_at":utc_isoformat(row.created_at)} for row in rows]}

@@ -1,8 +1,7 @@
-from datetime import timezone
 import hashlib
 import networkx as nx
 from sqlalchemy import select
-from .db import Report, Source, ThreatRecord, utcnow
+from .db import Report, Source, ThreatRecord, utcnow, utc_isoformat
 from .entities import entity, mask_value, redact_text
 
 NOTE = "ความเชื่อมโยงเป็นหลักฐานว่ารายการปรากฏร่วมกัน ไม่ใช่ข้อยืนยันว่าเป็นการโกง / Connections are co-occurrence evidence, not a fraud verdict."
@@ -15,7 +14,7 @@ def build_graph(db, roots=None, include_sample=False, masked=True, input_context
         graph.add_node(item["id"], id=item["id"], type=item["type"], label=item["masked_value"] if masked else item["value"], value=item["masked_value"] if masked else item["value"], is_sample=sample, status=status)
     def add_edge(left, right, relation, source, evidence, date, sample):
         eid = hashlib.sha256(f"{left}:{right}:{source}:{relation}".encode()).hexdigest()[:20]
-        graph.add_edge(left, right, key=eid, id=eid, source=left, target=right, relation=relation, provenance=source, evidence=redact_text(evidence), retrieved_at=date.isoformat(), is_sample=sample)
+        graph.add_edge(left, right, key=eid, id=eid, source=left, target=right, relation=relation, provenance=source, evidence=redact_text(evidence), retrieved_at=utc_isoformat(date), is_sample=sample)
     for record in db.scalars(select(ThreatRecord)).all():
         source = sources.get(record.source_id)
         if not source or (source.is_sample and not include_sample): continue
@@ -72,10 +71,10 @@ def lookup_history(db, entities):
     for record in db.scalars(select(ThreatRecord)).all():
         source = sources.get(record.source_id)
         if source and (record.entity_type,record.value) in keys:
-            matches.append({"entity_type": record.entity_type, "value": mask_value(record.value,record.entity_type), "status": "confirmed_source" if record.status == "confirmed" else "reported", "provenance_type":"source_confirmed" if record.status=="confirmed" else "source_reported", "source": source.name, "source_url": source.url, "retrieved_at": record.retrieved_at.isoformat(), "evidence": redact_text(record.evidence), "is_sample": source.is_sample})
+            matches.append({"entity_type": record.entity_type, "value": mask_value(record.value,record.entity_type), "status": "confirmed_source" if record.status == "confirmed" else "reported", "provenance_type":"source_confirmed" if record.status=="confirmed" else "source_reported", "source": source.name, "source_url": source.url, "retrieved_at": utc_isoformat(record.retrieved_at), "evidence": redact_text(record.evidence), "is_sample": source.is_sample})
     for report in db.scalars(select(Report).where(Report.status == "verified")).all():
         for item in report.entities:
             if (item["type"],item["value"]) in keys:
-                matches.append({"entity_type": item["type"],"value": item["masked_value"],"status":"reported","provenance_type":"community_reviewed","source":"Reviewed community report", "source_url":None,"retrieved_at": (report.reviewed_at or report.created_at).isoformat(), "evidence":"ผ่านการตรวจหลักฐานโดยผู้ดูแล แต่ไม่ใช่คำตัดสินทางกฎหมาย", "is_sample":False})
+                matches.append({"entity_type": item["type"],"value": item["masked_value"],"status":"reported","provenance_type":"community_reviewed","source":"Reviewed community report", "source_url":None,"retrieved_at": utc_isoformat(report.reviewed_at or report.created_at), "evidence":"ผ่านการตรวจหลักฐานโดยผู้ดูแล แต่ไม่ใช่คำตัดสินทางกฎหมาย", "is_sample":False})
     status = "confirmed_source" if any(m["status"] == "confirmed_source" and not m["is_sample"] for m in matches) else "reported" if matches else "no_data"
     return {"status": status, "matches": matches, "note": "ไม่พบประวัติไม่ได้หมายความว่าปลอดภัย / No history does not mean safe."}

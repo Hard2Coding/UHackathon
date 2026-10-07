@@ -1,51 +1,43 @@
 # ผลการตรวจที่รันจริง
 
-Environment ส่งมอบ: macOS ARM64, Python 3.12.14; วันที่ 6 ตุลาคม 2026 (Asia/Bangkok)
+ตรวจล่าสุด 7 ตุลาคม 2026 (Asia/Bangkok), macOS ARM64, Python 3.12.14, Expo 55/React Native 0.83. ข้อมูลเดโม/ข้อมูล train และโดเมนทดสอบเป็นข้อมูลสังเคราะห์ ไม่ใช่หลักฐานการโกงจริง
 
-| การตรวจ | ผลที่รันจริง |
+| การตรวจ | ผลและขอบเขต |
 |---|---|
-| ติดตั้ง Python dependencies ที่ pin | สำเร็จ; frozen ใน `requirements.lock` |
-| `pip check` | ผ่าน — No broken requirements found |
-| คำสั่ง bootstrap ตาม README | EXIT 0: `PYTHON_BIN=<bundled Python 3.12> bash scripts/bootstrap.sh`; ตรวจจาก environment เดิมและ cache/artifacts ที่มีอยู่ ไม่ใช่ clean-install test; npm ci ติดตั้ง dependencies จาก lockfile สำเร็จ |
-| Final frontend lockfile install | `npm ci` EXIT 0 หลังเพิ่ม SafeArea dependency: 627 packages, audit 628 packages, 11s; ใช้ project cache |
-| Runtime imports | ผ่าน: FastAPI, SQLAlchemy/Alembic/psycopg, scikit-learn, XGBoost, SHAP, SentenceTransformers/Torch, NetworkX, OpenCV, Pillow, pytesseract และ Apple Vision |
-| Pretrained multilingual embeddings | ดาวน์โหลดจริงจาก revision `e8f8c211226b894fcb81acc59f3b34ba3efd5f42`, encode ไทย/อังกฤษได้ 384 dimensions |
-| Train/evaluate artifacts | มี artifacts ที่ฝึกและ evaluate จริงรุ่น `sample-v1-6c6c58eff5`; รายละเอียดใน `ml/artifacts/default/metadata.json` และ `evaluation.json` |
-| ML tests | 15 passed; รวม actual local SentenceTransformer และ SHAP |
-| Combined backend/ML tests ชุดส่งมอบล่าสุด | 50 passed (35 backend + 15 ML), 2 dependency warnings, 20.12s จาก root canonical run; มี OAuth/LINE/caller directory tests โดย provider HTTP mocked และตรวจ RSA JWT ด้วย crypto จริง |
-| TypeScript + Expo web build | TypeScript EXIT 0, Expo web build `--clear` EXIT 0; ตรวจ API URL ที่ build แล้วเป็น `http://localhost:8007/api` |
-| Reference branding assets | `app/assets/BRAND.md` และ assets เป็น S/network/shield อิงภาพ reference ล่าสุด มี light/dark icon และ UI symbol; ImageGen interpretation ไม่ใช่ exact pixel extraction — frontend build/UI verification หลังเปลี่ยน branding จะอัปเดตจาก root |
-| README local startup | ผ่านจริง: Alembic SQLite migration, demo seed, API health และ demo login |
-| Request logging | startup ที่ส่งมอบใช้ `--no-access-log` เพื่อไม่ให้ history/graph query identifiers ปรากฏใน Uvicorn default access logs; คำขอเดโมที่ทดสอบใช้ข้อมูลสังเคราะห์ |
-| Text/URL inference over HTTP | ไทย/อังกฤษทำงานจริง; embeddings ready, URL SHAP ready, ไม่มี LLM key ใช้ template |
-| QR over HTTP | รูป QR reserved URL decode สำเร็จและต้อง confirm payload; รูปว่างได้ not_found |
-| OCR over HTTP | Tesseract 5.5.0 portable + eng/tha ใช้งานจริง; screenshot ไทยและอังกฤษสำเร็จ, รูปว่างได้ unreadable |
-| Shell scripts | `bash -n` ผ่าน |
-| Docker Compose configuration | YAML/service references/build paths ผ่าน static checks |
-| Nginx asset compression | gzip JS/CSS/JSON/SVG/TTF/OTF และ HTML พร้อม Vary ตั้งไว้; /api proxy ยังคงเดิม ใช้ no-store และไม่ gzip response API ส่วนบุคคล ตรวจ configuration แบบ static เท่านั้น ยังไม่มี Nginx/container runtime test |
-| PostgreSQL ที่รันจริง | ยังไม่ผ่าน: ไม่มี Docker/server; isolated `initdb` ถูก sandbox ปฏิเสธ `shmget` |
-| PostgreSQL migration SQL | สร้าง SQL แบบ offline ได้; SQLite ทั้ง 5 migrations upgrade head `fec7a430a529` สำเร็จจริง แต่ไม่ใช่ PostgreSQL integration test |
-| Docker image build/up | ยังไม่รัน: Docker ไม่พร้อมใน environment |
-| Native Android/iOS device | ยังไม่รันบนอุปกรณ์จริง |
-| iOS Call Directory extension | Swift typecheck และ isolated unsigned iOS Simulator `.appex` compile ผ่านจริงด้วย Xcode 26.6 SDK; full host app/CocoaPods, signing และ real-device calls ยังไม่ได้ทดสอบ |
-| Native config/plugin | Android+iOS prebuild repeated EXIT 0, extension embedding/host dependency/source path/permission assertions ผ่าน และ autolinking ตรวจแล้ว; ไม่ใช่ full Android/iOS app build |
-| Android caller service compile | ยังไม่รัน: ไม่มี Java/Android toolchain ที่พร้อมในเครื่องนี้ |
-| Google/LINE credentials | ยังไม่ได้ทดสอบ consent/callback ด้วย client/channel จริง; .env.example เป็น placeholders และ secrets ว่าง |
-| LINE message delivery | ยังไม่ได้ส่ง LINE push จริง; provider mock tests ไม่ใช่ผลการส่งภายนอก |
-| OAuth verification dependency | PyJWT 2.10.1 + cryptography 50.0.2/cffi 2.1.1 ติดตั้ง/import จริง; `pip check` ผ่าน |
-| Final API provider status | health HTTP 200, inference/OCR/QR ready; providers not configured, identities `[]`, LINE configured=false/enabled=false/linked=false ไม่มี credential หรือ notification จริงถูกสร้างขึ้น |
-| Mobile web login flow | ตรวจ viewport 390px: login-first, Google/LINE/อีเมล/สมัคร/Guest; Google unavailable เป็นข้อความชัดเจน เข้าบัญชีเดโมอีเมลและเปิด Settings สำเร็จ |
-| External intelligence API | ไม่มี integration credentials/provider ที่กำหนด จึงไม่มีผล integration จริง |
-| Frontend dependency audit | npm ci รายงาน 28 รายการ (7 moderate / 21 high) โดยนับ dependency chains; รวม braces และ node-forge ซึ่ง registry ยังไม่มีรุ่นแก้ไขที่ติดตั้งได้ในวันที่ตรวจ ไม่อ้างว่า dependency audit ผ่านหรือไม่มีช่องโหว่ |
+| Backend + ML | **52 passed** (37 backend + 15 ML), 2 dependency warnings, 12.79s หลังแก้ UTC timestamp; provider HTTP ถูก mock แต่ RSA/JWT crypto ตรวจจริง |
+| การแก้เวลา | SQLite คืน datetime ไม่มี timezone ทำให้ UI แสดง UTC เป็นเวลาท้องถิ่น; serialize UTC offset และ normalize imported offsets ก่อนบันทึก มี 2 regressions; ตรวจ API8009 และ UI แจ้งเตือนแสดง 13:45 ตามเวลาไทยตรงกันแล้ว |
+| HTTP ฟังก์ชันจริง | 31 checks บน API8008: register/login/profile, URL inference, unknown phone/account/wallet → insufficient data, Thai OCR, QR image/payload, history/filter/share/export, pending report/feedback, batch completed/export, graph, LINE/caller status, account export/delete/session401; ใช้บัญชีตรวจชั่วคราวที่ลบแล้ว ไม่ส่ง LINE ภายนอก |
+| Client flows | 8 OAuth checks + 4 actual-App privacy regressions ผ่าน (mock hooks/platform/HTTP); duplicate/cold callback, bounded retry, explicit link, logout และ late OCR/analysis/profile/history ไม่คืนข้อมูลเดิม |
+| TypeScript / เว็บ | typecheck และ Expo web export --clear ผ่าน; frontend เชื่อม API8009 ใน local preview8081; source และ build เป็น login-first |
+| UI browser จริง | ทดสอบ 320×740, 390×844, desktop1280×900, ภาษาไทย/อังกฤษ และ Light/Dark; login email, Google/LINE ที่ไม่มี config แสดงข้อความตรงตามจริง, session restore, 4 scan shortcuts, URL98.75/100, unknown phoneไม่มีคะแนน, save, actual overview, saved-HIGH alerts, FAQ search/expand, profile และ logout |
+| การอัปเดต Webapp | ปุ่มอัปเดตปรากฏจาก waiting worker จริง; กดแล้ว reload/คืนเซสชันได้ และปุ่มอัปเดตหาย ไม่ได้ยืนยันว่าติดตั้ง standalone บนอุปกรณ์สำเร็จ |
+| Worker tests / HTTP | ทดสอบ public allowlist, ไม่ดัก API/auth/OAuth query/Authorization/non-GET/foreign origin, cache-storage failure, redirected assets และ user-triggered update ผ่าน; manifest/icons192/512/180/HTML/SW ตอบ200 และ MIME ถูกต้อง |
+| Native JavaScript | Expo Hermes export iOS/Android ผ่านหลัง UI หลัก/การปรับ header; ไม่ใช่ APK/IPA หรือ native device build |
+| Native caller ก่อนหน้า | Android/iOS autolinking และ repeated prebuild/config-plugin checks ผ่าน; Swift Call Directory typecheck และ isolated unsigned simulator extension compile ผ่าน; full host/sign/device/call test ยังไม่ผ่านการยืนยัน |
+| Activation checker | merged read-only/redacted config checker มี 12 assertions ผ่าน; production/required prerequisites ไม่ครบคืน exit1; ไม่เรียก OAuth และไม่ส่งข้อความ |
+| Dependencies / models | pinned Python install/pip check ผ่าน; embeddings multilingual 384 dimensions โหลดจาก revisionจริง; SHAP/additivity/ML tests ผ่าน โมเดล sample-v1-6c6c58eff5 ฝึกจาก synthetic400แถว แยก connected campaign groups ไม่มี production accuracy claim |
+| PostgreSQL / containers | SQLite + 5 Alembic migrations และ offline PostgreSQL migration SQL ผ่าน; Docker/PostgreSQL/Nginx runtime integration ยังไม่ได้ตรวจจริง |
 
-อัปเดตจำนวน tests/flow checks จากการรันสุดท้ายก่อนส่งมอบ โดยไม่ถือว่ารายการที่ยังไม่รันผ่านแล้ว
+## ภาพตรวจหน้าจอ
 
-คะแนนหรือ metrics ของ dataset สังเคราะห์ไม่ใช่ production accuracy และไม่ได้ calibrate เป็น scam probability
+ภาพอยู่ใน outputs ข้างโครงการ: `scamgraph-dashboard-desktop.jpg`, `scamgraph-dashboard-mobile.jpg`, `scamgraph-login-desktop.jpg`, `scamgraph-login-mobile.jpg`. ใช้ Demo User และข้อมูลสังเคราะห์ ตัวเลข Dashboard มาจากประวัติที่บันทึกจริงของบัญชีเดโม ไม่เติมข้อมูลทะเบียน/เบอร์/เจ้าของบัญชีหรือสถิติสมมติ
 
-Preview ล่าสุดใช้ API `http://localhost:8007` และเว็บ `http://localhost:8081` ส่วนคำสั่ง README สำหรับผู้เริ่มระบบเองใช้ API พอร์ต 8000 เป็นค่าเริ่มต้น
+## ข้อจำกัดที่ยังมีผล
 
-Automatic approval review ปฏิเสธการส่ง Ctrl+C เพื่อหยุด test server บาง session เพราะ `sandbox_approval` ถูกปิด และคำสั่งส่ง signal ถูก sandbox ปฏิเสธ อาจมี test servers เก่าบนพอร์ต 8000/8001/8003/8004/8005/8006 ค้างอยู่; พอร์ตส่งมอบที่ตรวจล่าสุดคือ 8007/8081 ผู้ใช้สามารถหยุด terminal เหล่านั้นเองเมื่อไม่ต้องการ
+Google/LINE ยังไม่มีโครงการ/credentials ตามคำตอบผู้ใช้ ไม่มีการ login ด้วย provider จริงหรือส่ง LINE จริง ต้องตั้งค่าตาม ACTIVATION.md และตรวจด้วยบัญชีเจ้าของที่ยินยอม iOS installed-PWA OAuth ยังต้องทดสอบจริงเพราะ browser-context/PKCE storage อาจต่างกัน ดู WEBAPP.md
 
-ตรวจเพิ่มเติมหลังแก้ client และรับภาพอ้างอิง: `npm run test:flows` ผ่าน 8 OAuth flow checks และ 4 actual-App privacy regressions (mock platform/hooks/HTTP ไม่ใช่ provider/device tests); ครอบคลุม native cold-start, duplicate callbacks, bounded retry, explicit link, stale OCR/analysis/profile/history หลัง logout. Branding ใช้ S/network/shield อิงภาพของผู้ใช้, โทนม่วง–ฟ้า–ไซแอน, light/dark icons; built-in ImageGen prompt และ asset paths อยู่ใน `app/assets/BRAND.md`. UI asset 384px 93,728 bytes; native icons 1024px opaque/transparent ตามประเภท.
+Caller directory มีข้อมูลจริงที่ยืนยัน 0 รายการ Android ต้องมี JDK/Android SDK/native build และเลือก Call Screening role; iOS ต้อง signed host/extension/App Group และเปิด Call Directory ใน Settings เว็บและ Expo Go ไม่ตรวจสายเรียกเข้า iOS แสดง labels สำหรับรายการที่ sync เท่านั้น ไม่แสดง unknown-call app notification การปลอมเบอร์ยังเป็นข้อจำกัด
 
-รอบส่งมอบหลังรับภาพจริง: TypeScript และ Expo web export ผ่าน; Expo iOS/Android Hermes JS bundles export ผ่าน (ไม่ใช่ full native app build). ตรวจเว็บจริง 390×844 ทั้ง Dark/Light และ desktop1280×900: โลโก้ S/graph/shield, login choices, กลับหน้าloginหลังlogout; Guest inputว่างหลังlogout. OCRภาพเดโมไทยอ่านได้และข้อความแก้ไขได้บนUI. ไฟล์ภาพตรวจอยู่ใน outputs: scamgraph-welcome-mobile.jpg, scamgraph-welcome-light.jpg, scamgraph-welcome-desktop.jpg. Backend8007ยังตอบhealth200และauth_providersมีสถานะnot_configured; network permission รอบนี้ได้รับแล้ว. ตรวจพอร์ตเก่าล่าสุด8000/8003/8004/8005/8006ยังตอบhealth ส่วน8001ไม่เปิด.
+ยังไม่มี reputation/domain-age/ทะเบียนผู้ถือบัญชี/เครือข่ายมือถือ/บริการ deepfake ภายนอก ผลตัวอย่างที่ดูปลอดภัยในภาพ reference ไม่ถูกสร้างแทนข้อมูลที่ไม่มี โมเดลยังฝึกจาก synthetic data ต้องประเมินกับข้อมูลจริงที่มีสิทธิ์ใช้ก่อนรับรองความแม่นยำ
+
+ระบบอนุมัติการควบคุมเบราว์เซอร์ปฏิเสธ `fileChooser.setFiles` ไป localhost8081 โดยระบุว่าผู้ใช้ไม่ได้ให้สิทธิ์ จึงไม่ได้ทำ UI-upload OCR ในรอบนี้ และไม่ใช้วิธีอื่นเลี่ยงการปฏิเสธ การทดสอบ OCR/QR ทาง API สำเร็จก่อนเหตุการณ์นี้ รอบก่อนเคยตรวจ OCR editable UI แล้ว
+
+ไม่มีการ deploy/public publish, provider-account creation, cloud signing หรือยอมรับข้อตกลงแทนผู้ใช้ ไฟล์ source ZIP ไม่รวม dependencies/cache/ฐานข้อมูล/credentials/weights embedding ขนาดใหญ่
+
+## การรวม Git และ Vercel
+
+ตรวจจาก Git จริง `Desktop/UHackathon` แล้ว: install Python/Expo ตาม lockfilesผ่าน, backend/ML52passed+2warnings, client12flows, dev-supervisor6tests, PWAworkerและVercelroute/public-env checksผ่าน. Vercelconfigผ่าน official schema instance checksและ routing-utils แปลง routingได้ ไม่มีAPI/OAuth/assetsถูกrewriteเป็นหน้าlogin. GitHub Actionsผ่าน actionlint แต่ยังไม่ถือว่าjobบนGitHubสำเร็จจนเห็นrunจริง. SharedMetro8091/API8011รันจากGitproject; nativeJSและwebใช้ APIURL เดียวกัน.
+
+โปรเจกต์ iOS ที่มีอยู่และภาพอ้างอิงของผู้ใช้ถูกเก็บไว้ Secrets, ฐานข้อมูล, dependencies, weightsembeddingและruntimeถูกignore. Rootpackage-lockเดิมของผู้ใช้ไม่ได้เขียนทับ; frontendใช้app/package-lock.json. Vercelบัญชียังไม่เชื่อม ไม่มีการอ้างว่าclouddeployหรือOTAส่งถึงเครื่องแล้ว.
+
+ตรวจ sync จริง: เปลี่ยนข้อความใน shared LoginScreen ชั่วคราว เว็บ8091รับการแก้ผ่าน Fast Refresh โดยไม่ reload และ iOS dev bundleมีข้อความเดียวกัน/ชี้API8011 จากนั้นคืน sourceเดิมและยืนยันหน้าเว็บแล้ว. WebproductionexportจากGitrepoผ่าน. iOS Debug unsigned arm64 Simulator **host + embedded Call Directory extension buildผ่าน** ด้วย Xcode27.0/CocoaPods1.17.0 หลังแก้Podminimum12.4ให้ไม่น้อยกว่าhostminimum15.1ผ่านpost_install/pluginที่idempotent. ไม่แก้signing/team/hostminimum/extensionminimum ไม่ติดตั้งบนเครื่องจริงหรือทดสอบสายโทรเข้า.

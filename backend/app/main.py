@@ -7,7 +7,7 @@ import json
 import os
 import shutil
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, text as sql_text
 from . import services
-from .db import AnalysisEvent, Audit, Base, Config, EvidenceFile, Feedback, History, Job, Report, SessionLocal, SessionToken, Source, ThreatRecord, User, ProviderIdentity, OAuthState, OAuthExchange, LineDelivery, LineFriendship, LineSubscription, engine, get_db, utcnow
+from .db import AnalysisEvent, Audit, Base, Config, EvidenceFile, Feedback, History, Job, Report, SessionLocal, SessionToken, Source, ThreatRecord, User, ProviderIdentity, OAuthState, OAuthExchange, LineDelivery, LineFriendship, LineSubscription, engine, get_db, utcnow, utc_datetime, utc_isoformat
 from .entities import extract_entities, normalize, redact_text, validate_input
 from .graph import build_graph
 from .jobs import job_dict, parse_rows, recover_jobs, run_job
@@ -135,10 +135,10 @@ def update_profile(body:ProfileUpdate,user=Depends(current_user),db=Depends(get_
     stored=db.get(User,user.id);stored.name=body.name.strip();db.commit();return user_dict(stored)
 
 def history_dict(row,masked=False):
-    return {"id":row.id,"text":"[Original input hidden for privacy]" if masked else row.text,"kind":row.kind,"level":row.level,"result":services.masked_result(row.result) if masked else row.result,"created_at":row.created_at.isoformat()}
+    return {"id":row.id,"text":"[Original input hidden for privacy]" if masked else row.text,"kind":row.kind,"level":row.level,"result":services.masked_result(row.result) if masked else row.result,"created_at":utc_isoformat(row.created_at)}
 
 def report_dict(row,masked=False):
-    return {"id":row.id,"text":"[Original input hidden for privacy]" if masked else row.text,"detail":"[Private report detail hidden]" if masked else row.detail,"evidence":[] if masked else row.evidence,"entities":[{"type":e["type"],"value":e["masked_value"]} for e in row.entities] if masked else row.entities,"status":row.status,"moderation_reason":"[Private review detail hidden]" if masked and row.moderation_reason else row.moderation_reason,"created_at":row.created_at.isoformat(),"reviewed_at":row.reviewed_at.isoformat() if row.reviewed_at else None}
+    return {"id":row.id,"text":"[Original input hidden for privacy]" if masked else row.text,"detail":"[Private report detail hidden]" if masked else row.detail,"evidence":[] if masked else row.evidence,"entities":[{"type":e["type"],"value":e["masked_value"]} for e in row.entities] if masked else row.entities,"status":row.status,"moderation_reason":"[Private review detail hidden]" if masked and row.moderation_reason else row.moderation_reason,"created_at":utc_isoformat(row.created_at),"reviewed_at":utc_isoformat(row.reviewed_at)}
 
 @app.get("/api/auth/export",response_model=dict)
 def export_account(masked:bool=True,user=Depends(current_user),db=Depends(get_db)):
@@ -333,7 +333,7 @@ def moderate_report(report_id:str,body:ModerationRequest,user=Depends(admin_user
     db.commit();return report_dict(row)
 
 def source_dict(source):
-    return {"id":source.id,"name":source.name,"description":source.description,"url":source.url,"is_sample":source.is_sample,"enabled":source.enabled,"created_at":source.created_at.isoformat()}
+    return {"id":source.id,"name":source.name,"description":source.description,"url":source.url,"is_sample":source.is_sample,"enabled":source.enabled,"created_at":utc_isoformat(source.created_at)}
 
 @app.get("/api/admin/sources",response_model=SourceList)
 def sources(user=Depends(admin_user),db=Depends(get_db)): return {"items":[source_dict(s) for s in db.scalars(select(Source))]}
@@ -370,7 +370,7 @@ async def import_source(source_id:str,file:UploadFile=File(...),user=Depends(adm
             for e in related:
                 if e.get("type") not in ("url","domain","phone","account","wallet","line") or not e.get("value"): raise ValueError("Invalid relation")
             date=datetime.fromisoformat(row["retrieved_at"].replace("Z","+00:00")) if row.get("retrieved_at") else utcnow()
-            records.append(ThreatRecord(id=str(uuid4()),source_id=source_id,entity_type=kind,value=value,status=status,evidence=str(row["evidence"])[:10000],related_entities=related,retrieved_at=date))
+            records.append(ThreatRecord(id=str(uuid4()),source_id=source_id,entity_type=kind,value=value,status=status,evidence=str(row["evidence"])[:10000],related_entities=related,retrieved_at=utc_datetime(date)))
     except Exception: raise HTTPException(422,"Import needs entity_type,value,status(reported/confirmed),evidence,retrieved_at(optional),related_entities(optional JSON array)")
     added=0
     for record in records:
@@ -427,7 +427,7 @@ def put_thresholds(body:ThresholdRequest,user=Depends(admin_user),db=Depends(get
 
 @app.get("/api/admin/audit",response_model=dict)
 def audit_log(user=Depends(admin_user),db=Depends(get_db)):
-    return {"items":[{"id":a.id,"user_id":a.user_id,"action":a.action,"target":a.target,"detail":a.detail,"created_at":a.created_at.isoformat()} for a in db.scalars(select(Audit).order_by(Audit.created_at.desc()).limit(300))]}
+    return {"items":[{"id":a.id,"user_id":a.user_id,"action":a.action,"target":a.target,"detail":a.detail,"created_at":utc_isoformat(a.created_at)} for a in db.scalars(select(Audit).order_by(Audit.created_at.desc()).limit(300))]}
 
 @app.get("/api/admin/health",response_model=dict)
 def admin_health(user=Depends(admin_user),db=Depends(get_db)): return health_data(db)

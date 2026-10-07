@@ -4,6 +4,7 @@ COPY app/package.json app/package-lock.json ./
 RUN npm ci
 COPY app ./
 COPY shared /shared
+COPY scripts /scripts
 ENV EXPO_PUBLIC_API_URL=/api
 RUN npm run typecheck && npm run build
 

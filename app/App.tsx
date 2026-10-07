@@ -54,6 +54,8 @@ import {
   Search,
   LockKeyhole,
   Plus,
+  Bell,
+  BookOpen,
 } from "lucide-react-native";
 import {
   UIContext,
@@ -79,6 +81,9 @@ import { HistoryPage, ReportsPage } from "./src/Records";
 import { AuthModal, SettingsPage } from "./src/Account";
 import { LoginScreen } from "./src/LoginScreen";
 import { BrandMark } from "./src/Brand";
+import { MotionView, GradientSurface } from "./src/visual";
+import { HelpPage, AlertsPage, WebappPanel } from "./src/Support";
+import { useWebapp } from "./src/webapp";
 import {
   finishOAuthRedirect,
   isOAuthCallback,
@@ -96,9 +101,11 @@ const menus = [
   ["home", House, "หน้าหลัก", "Home"],
   ["check", ScanLine, "ตรวจสอบ", "Analyze"],
   ["history", Clock3, "ประวัติ", "History"],
+  ["alerts", Bell, "แจ้งเตือน", "Alerts"],
   ["graph", Network, "เครือข่ายความสัมพันธ์", "Connections"],
   ["reports", Flag, "แจ้งเบาะแส", "Report a clue"],
-  ["settings", Settings2, "ตั้งค่า", "Settings"],
+  ["help", BookOpen, "ศูนย์ช่วยเหลือ", "Help center"],
+  ["settings", Settings2, "โปรไฟล์", "Profile"],
 ] as const;
 export default function App() {
   useCallerEvidenceRefresh();
@@ -109,7 +116,8 @@ export default function App() {
   });
   const { width } = useWindowDimensions();
   const desktop = width >= 980;
-  const [dark, setDarkValue] = useState(true),
+  const webapp = useWebapp();
+  const [dark, setDarkValue] = useState(false),
     [english, setEnglishValue] = useState(false),
     [page, setPage] = useState("home");
   const [text, setText] = useState(""),
@@ -756,34 +764,15 @@ export default function App() {
     mobile = false,
   ) => {
     const [key, Icon, th, en] = m;
+    const selected = page === key;
+    const color = mobile ? selected ? c.teal : c.muted : selected ? "#c6b7ff" : "#b6c3db";
+    const scanner = mobile && key === "check";
     return (
-      <Pressable
-        key={key}
-        onPress={() => navigate(key)}
-        accessibilityRole="button"
-        accessibilityLabel={t(th, en)}
-        style={{
-          flexDirection: mobile ? "column" : "row",
-          alignItems: "center",
-          gap: mobile ? 4 : 12,
-          paddingHorizontal: mobile ? 12 : 17,
-          paddingVertical: mobile ? 9 : 13,
-          borderRadius: 10,
-          backgroundColor: page === key ? c.soft : "transparent",
-        }}
-      >
-        <Icon
-          size={mobile ? 20 : 18}
-          color={page === key ? c.teal : c.muted}
-          strokeWidth={page === key ? 2 : 1.7}
-        />
-        <Txt
-          size={mobile ? 9 : 12}
-          bold={page === key}
-          style={{ color: page === key ? c.teal : c.muted }}
-        >
-          {mobile && key === "graph" ? t("เครือข่าย", "Graph") : t(th, en)}
-        </Txt>
+      <Pressable key={key} onPress={() => navigate(key)} accessibilityRole="button"
+        accessibilityLabel={t(th, en)} accessibilityState={{ selected }}
+        style={({ pressed }) => ({ flexDirection: mobile ? "column" : "row", alignItems: "center", justifyContent: mobile ? "center" : "flex-start", gap: mobile ? 3 : 12, flex: mobile ? 1 : undefined, paddingHorizontal: mobile ? 3 : 16, paddingVertical: mobile ? 8 : 12, borderRadius: 14, backgroundColor: selected && !scanner ? mobile ? c.soft : "#252a4f" : "transparent", opacity: pressed ? 0.72 : 1, minHeight: mobile ? 61 : 46 })}>
+        {scanner ? <GradientSurface radius={19} style={{ width: 48, height: 48, marginTop: -25, alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(80,64,210,.27)" }}><View style={{ zIndex: 1 }}><Icon size={24} color="#fff" /></View></GradientSurface> : <Icon size={mobile ? 21 : 18} color={color} strokeWidth={selected ? 2.1 : 1.8} />}
+        <Txt size={mobile ? 9 : 12} bold={selected} style={{ color }}>{scanner ? t("สแกน", "Scan") : t(th, en)}</Txt>
       </Pressable>
     );
   };
@@ -840,8 +829,8 @@ export default function App() {
           {desktop && (
             <View
               style={{
-                width: 224,
-                backgroundColor: c.nav,
+                width: 218,
+                backgroundColor: "#111d38",
                 borderRightWidth: 1,
                 borderColor: c.line,
                 padding: 19,
@@ -855,7 +844,7 @@ export default function App() {
                   alignItems: "center",
                   paddingHorizontal: 4,
                   paddingTop: 8,
-                  paddingBottom: 37,
+                  paddingBottom: 28,
                 }}
               >
                 <View
@@ -868,13 +857,13 @@ export default function App() {
                   <BrandMark size={30} />
                 </View>
                 <View>
-                  <Txt bold size={18} style={{ lineHeight: 24 }}>
+                  <Txt bold size={18} style={{ lineHeight: 24, color: "#fff" }}>
                     ScamGraph{" "}
-                    <Txt bold size={18} style={{ color: c.teal }}>
+                    <Txt bold size={18} style={{ color: "#b9a5ff" }}>
                       AI
                     </Txt>
                   </Txt>
-                  <Txt size={7} muted style={{ letterSpacing: 0.8 }}>
+                  <Txt size={7} muted style={{ letterSpacing: 0.8, color: "#a9b9d9" }}>
                     SEE THE CONNECTIONS
                   </Txt>
                 </View>
@@ -884,6 +873,7 @@ export default function App() {
                 size={9}
                 style={{
                   letterSpacing: 1.2,
+                  color: "#91a4c8",
                   paddingLeft: 17,
                   marginBottom: 12,
                 }}
@@ -905,16 +895,16 @@ export default function App() {
                 style={{
                   padding: 15,
                   borderRadius: 12,
-                  backgroundColor: c.soft,
                   gap: 8,
                   marginBottom: 22,
+                  backgroundColor: "#1d2b48",
                 }}
               >
-                <ShieldCheck size={21} color={c.teal} />
-                <Txt bold size={12}>
+                <ShieldCheck size={21} color="#a9c4ff" />
+                <Txt bold size={12} style={{ color: "#e5edff" }}>
                   {t("เชื่ออย่างมีข้อมูล", "Make informed decisions")}
                 </Txt>
-                <Txt muted size={10}>
+                <Txt muted size={10} style={{ color: "#adc0e0" }}>
                   {t(
                     "อ่านเหตุผลและข้อมูลที่ขาด ก่อนตัดสินใจทุกครั้ง",
                     "Review evidence and missing data before acting.",
@@ -944,10 +934,10 @@ export default function App() {
                   <UserRound size={17} color={c.muted} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Txt bold size={12}>
+                  <Txt bold size={12} style={{ color: "#e5edff" }}>
                     {user?.name || t("ผู้เยี่ยมชม", "Guest")}
                   </Txt>
-                  <Txt muted size={10}>
+                  <Txt muted size={10} style={{ color: "#adc0e0" }}>
                     {user
                       ? t("จัดการบัญชี", "Manage account")
                       : t(
@@ -963,11 +953,11 @@ export default function App() {
           <View style={{ flex: 1 }}>
             <View
               style={{
-                height: desktop ? 76 : 66,
+                height: desktop ? 72 : 64,
                 backgroundColor: c.card,
                 borderBottomWidth: 1,
                 borderColor: c.line,
-                paddingHorizontal: desktop ? 34 : 18,
+                paddingHorizontal: desktop ? 32 : 18,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -978,7 +968,7 @@ export default function App() {
                 style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
               >
                 {!desktop && <BrandMark size={30} />}
-                <Txt bold size={desktop ? 13 : 17}>
+                <Txt bold size={desktop ? 13 : width < 360 ? 14 : 17}>
                   {desktop ? pageTitle : "ScamGraph AI"}
                 </Txt>
                 {desktop && (
@@ -992,22 +982,27 @@ export default function App() {
                 )}
               </View>
               <View
-                style={{ flexDirection: "row", gap: 16, alignItems: "center" }}
+                style={{ flexDirection: "row", gap: desktop ? 16 : 2, alignItems: "center" }}
               >
                 {width >= 720 && (
                   <Pill>
                     {t("เดโม • ข้อมูลตัวอย่าง", "Demo · sample data")}
                   </Pill>
                 )}
-                <Pressable
+                <Pressable accessibilityRole="button" accessibilityLabel={t("เปิดแจ้งเตือน", "Open alerts")} onPress={() => navigate("alerts")} style={{ width: 32, height: 36, alignItems: "center", justifyContent: "center" }}><Bell size={18} color={c.muted} /></Pressable>
+                {width >= 360 && <Pressable
+                  accessibilityRole="button"
+                  style={{ width: 32, height: 36, alignItems: "center", justifyContent: "center" }}
                   accessibilityLabel={t("สลับภาษา", "Switch language")}
                   onPress={() => setEnglish(!english)}
                 >
                   <Txt bold muted size={11}>
                     {english ? "TH" : "EN"}
                   </Txt>
-                </Pressable>
+                </Pressable>}
                 <Pressable
+                  accessibilityRole="button"
+                  style={{ width: 32, height: 36, alignItems: "center", justifyContent: "center" }}
                   accessibilityLabel={t("สลับโหมดมืด", "Toggle dark mode")}
                   onPress={() => setDark(!dark)}
                 >
@@ -1019,6 +1014,8 @@ export default function App() {
                 </Pressable>
                 {!desktop && (
                   <Pressable
+                    accessibilityRole="button"
+                    style={{ width: 32, height: 36, alignItems: "center", justifyContent: "center" }}
                     accessibilityLabel={t("บัญชี", "Account")}
                     onPress={() =>
                       user ? navigate("settings") : setAuthOpen(true)
@@ -1031,8 +1028,9 @@ export default function App() {
             </View>
             <ScrollView
               ref={scroll}
+              showsVerticalScrollIndicator={false}
               contentContainerStyle={{
-                padding: desktop ? 32 : 18,
+                padding: desktop ? 30 : 18,
                 paddingBottom: desktop ? 35 : 20,
                 maxWidth: 1260,
                 width: "100%",
@@ -1040,11 +1038,14 @@ export default function App() {
               }}
               keyboardShouldPersistTaps="handled"
             >
+              {webapp.isWeb && !webapp.online && <View style={{ marginBottom: 16 }}><Note>{t("ออฟไลน์ — เชื่อมต่ออินเทอร์เน็ตเพื่อตรวจสอบและโหลดข้อมูลส่วนตัว", "Offline — connect to analyze content and load private data")}</Note></View>}
               {oauthRetryPanel}
+              <MotionView key={page}>
               {page === "home" && (
                 <Home
                   checker={checker}
                   health={health}
+                  user={user}
                   onExample={(input, type) => {
                     setText(input);
                     setKind(type);
@@ -1159,7 +1160,11 @@ export default function App() {
                   initialText={reportText}
                 />
               )}
+              {page === "help" && <HelpPage onGo={navigate} />}
+              {page === "alerts" && <AlertsPage user={user} onLogin={() => setAuthOpen(true)} onGo={navigate} onOpen={(r, input, type, id) => { if (viewGeneration !== privateGeneration.current || !user || currentUser.current?.id !== user.id) return; setResult(r); setText(input); setKind(type as InputKind); setSavedId(id); navigate("check"); }} />}
               {page === "settings" && (
+                <View>
+                <WebappPanel state={webapp} install={webapp.install} applyUpdate={webapp.applyUpdate} />
                 <SettingsPage
                   user={user}
                   onLogin={() => setAuthOpen(true)}
@@ -1202,6 +1207,7 @@ export default function App() {
                     }
                   }}
                 />
+                </View>
               )}
               {page === "admin" && <AdminPage user={user} notify={notify} />}
               {page === "graph" && (
@@ -1309,6 +1315,7 @@ export default function App() {
                   </Note>
                 </View>
               )}
+              </MotionView>
               <View
                 style={{
                   marginTop: 30,
@@ -1338,25 +1345,13 @@ export default function App() {
                   backgroundColor: c.card,
                   borderTopWidth: 1,
                   borderColor: c.line,
-                  paddingVertical: 5,
+                  paddingVertical: 4,
+                  boxShadow: "0 -4px 24px rgba(40,65,110,.05)",
                 }}
               >
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    flexGrow: 1,
-                    justifyContent: "space-around",
-                    paddingHorizontal: 4,
-                  }}
-                >
-                  {menus.map((m) => navItem(m, true))}
-                  {user?.role === "admin" &&
-                    navItem(
-                      ["admin", LayoutDashboard, "ผู้ดูแล", "Admin"],
-                      true,
-                    )}
-                </ScrollView>
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 9 }}>
+                  {["home", "history", "check", "alerts", "settings"].map(key => navItem(menus.find(m => m[0] === key)!, true))}
+                </View>
               </View>
             )}
           </View>
@@ -1369,7 +1364,7 @@ export default function App() {
                 right: 20,
                 left: desktop ? undefined : 20,
                 maxWidth: desktop ? 520 : undefined,
-                backgroundColor: toast.error ? "#963b47" : "#163e44",
+                backgroundColor: toast.error ? "#963b47" : "#303e76",
                 borderRadius: 12,
                 padding: 17,
                 flexDirection: "row",

@@ -142,6 +142,9 @@ function host() {
       {},
       { get: (_, name) => marker(String(name)) },
     ),
+    "./src/visual": { MotionView: marker("MotionView"), GradientSurface: marker("GradientSurface") },
+    "./src/Support": { HelpPage: marker("HelpPage"), AlertsPage: marker("AlertsPage"), WebappPanel: marker("WebappPanel") },
+    "./src/webapp": { useWebapp: () => ({ isWeb: false, online: true, install() {}, applyUpdate() {} }) },
     "./src/ui": {
       UIContext: React.createContext({}),
       palette: { light: c, dark: c },

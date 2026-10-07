@@ -7,6 +7,17 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 def utcnow():
     return datetime.now(timezone.utc)
 
+def utc_datetime(value: datetime) -> datetime:
+    """Database timestamps are UTC; SQLite returns them without tzinfo.
+
+    Convert an aware value's instant rather than replacing its timezone. Source
+    imports must also use this before persistence because SQLite drops offsets.
+    """
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+def utc_isoformat(value: datetime | None) -> str | None:
+    return utc_datetime(value).isoformat() if value is not None else None
+
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://scamgraph:scamgraph@localhost:5432/scamgraph")
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)

@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
 import {
   View,
   Text,
@@ -12,28 +12,29 @@ import {
   TextStyle,
 } from "react-native";
 import { ArrowRight, Inbox, Info } from "lucide-react-native";
+import { GradientSurface } from "./visual";
 export const palette = {
   light: {
-    bg: "#f5f6fd",
+    bg: "#f5faff",
     card: "#ffffff",
-    ink: "#182344",
-    muted: "#626d86",
-    line: "#e4e7f3",
-    soft: "#efedfd",
-    teal: "#5743d6",
-    tealDark: "#4733b3",
+    ink: "#172d50",
+    muted: "#5c718e",
+    line: "#dce8f4",
+    soft: "#edf2ff",
+    teal: "#4663df",
+    tealDark: "#324ec4",
     nav: "#ffffff",
   },
   dark: {
-    bg: "#050b18",
-    card: "#0d172a",
+    bg: "#071326",
+    card: "#10203a",
     ink: "#f6f7ff",
-    muted: "#a3afc8",
-    line: "#243451",
-    soft: "#141f3a",
-    teal: "#ad9bff",
+    muted: "#abc0db",
+    line: "#283e60",
+    soft: "#182b4b",
+    teal: "#b5a5ff",
     tealDark: "#6947e3",
-    nav: "#080f1f",
+    nav: "#08182f",
   },
 };
 export const UIContext = createContext({
@@ -86,7 +87,7 @@ export function Panel({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  const { c } = useUI();
+  const { c, dark } = useUI();
   return (
     <View
       style={[
@@ -94,8 +95,9 @@ export function Panel({
           backgroundColor: c.card,
           borderColor: c.line,
           borderWidth: 1,
-          borderRadius: 18,
+          borderRadius: 24,
           padding: 24,
+          boxShadow: dark ? "0px 10px 28px rgba(0, 6, 20, 0.15)" : "0px 8px 28px rgba(34, 69, 119, 0.055)",
         },
         style,
       ]}
@@ -127,9 +129,15 @@ export function Button({
 }) {
   const { c, dark } = useUI();
   const ink = secondary ? c.ink : "#fff";
+  const [highlighted, setHighlighted] = useState(false);
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      onHoverIn={() => setHighlighted(true)}
+      onHoverOut={() => setHighlighted(false)}
+      onFocus={() => setHighlighted(true)}
+      onBlur={() => setHighlighted(false)}
       disabled={disabled || loading}
       onPress={onPress}
       style={({ pressed }) => [
@@ -142,25 +150,30 @@ export function Button({
                 ? c.tealDark
                 : c.teal,
           borderWidth: 1,
-          borderColor: secondary ? c.line : "transparent",
-          borderRadius: 10,
+          borderColor: secondary ? highlighted ? c.teal : c.line : "transparent",
+          borderRadius: 14,
+          minHeight: small ? 40 : 49,
+          overflow: "hidden",
           paddingHorizontal: small ? 13 : 20,
           paddingVertical: small ? 9 : 13,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
           gap: 9,
-          opacity: disabled ? 0.45 : pressed ? 0.8 : 1,
+          opacity: disabled ? 0.45 : pressed ? 0.82 : 1,
+          transform: [{ scale: pressed && !disabled ? 0.985 : 1 }],
+          boxShadow: disabled ? undefined : highlighted ? "0px 0px 0px 3px rgba(89, 109, 224, 0.18), 0px 8px 20px rgba(74, 84, 215, 0.19)" : secondary || danger ? undefined : "0px 5px 14px rgba(74, 84, 215, 0.17)",
         },
         style,
       ]}
     >
+      {!secondary && !danger && <GradientSurface style={StyleSheet.absoluteFillObject} radius={14} colors={dark ? ["#315ee8", "#8b4ee8"] : ["#2e6ae7", "#7850df", "#9654df"]} />}
       {loading ? (
-        <ActivityIndicator size="small" color={ink} />
+        <View style={{ zIndex: 1 }}><ActivityIndicator size="small" color={ink} /></View>
       ) : Icon ? (
-        <Icon size={small ? 15 : 18} color={ink} />
+        <View style={{ zIndex: 1 }}><Icon size={small ? 15 : 18} color={ink} /></View>
       ) : null}
-      <Txt bold size={small ? 12 : 14} style={{ color: ink }}>
+      <Txt bold size={small ? 12 : 14} style={{ color: ink, zIndex: 1 }}>
         {children}
       </Txt>
     </Pressable>
@@ -172,6 +185,7 @@ export function Field({
   ...props
 }: TextInputProps & { label?: string }) {
   const { c } = useUI();
+  const [focused, setFocused] = useState(false);
   return (
     <View style={{ gap: 7 }}>
       {label && (
@@ -181,6 +195,8 @@ export function Field({
       )}
       <TextInput
         {...props}
+        onFocus={event => { setFocused(true); props.onFocus?.(event); }}
+        onBlur={event => { setFocused(false); props.onBlur?.(event); }}
         accessibilityLabel={props.accessibilityLabel || label}
         placeholderTextColor={c.muted}
         style={[
@@ -190,8 +206,10 @@ export function Field({
             color: c.ink,
             backgroundColor: c.bg,
             borderWidth: 1,
-            borderColor: c.line,
-            borderRadius: 10,
+            borderColor: focused ? c.teal : c.line,
+            borderRadius: 14,
+            minHeight: 49,
+            boxShadow: focused ? "0px 0px 0px 3px rgba(77, 106, 224, 0.11)" : undefined,
             paddingHorizontal: 14,
             paddingVertical: 12,
             outlineStyle: "none" as any,
@@ -224,7 +242,7 @@ export function Pill({
   const colors = {
     HIGH: [dark ? "#442c36" : "#fff0f0", dark ? "#ff9fa6" : "#b9444e"],
     MEDIUM: [dark ? "#3a3628" : "#fff6df", dark ? "#f7d789" : "#927121"],
-    LOW: [c.soft, c.teal],
+    LOW: [dark ? "#15372f" : "#e8f8f1", dark ? "#76e2c6" : "#187b64"],
     INSUFFICIENT_DATA: [c.bg, c.muted],
     "INSUFFICIENT DATA": [c.bg, c.muted],
     teal: [c.soft, c.teal],

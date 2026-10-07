@@ -13,7 +13,7 @@ from fastapi import APIRouter,Depends,HTTPException,Request
 from pydantic import BaseModel
 from sqlalchemy import delete,func,select
 from sqlalchemy.exc import IntegrityError
-from .db import History,LineDelivery,LineFriendship,LineSubscription,ProviderIdentity,SessionLocal,WebhookReceipt,get_db,utcnow
+from .db import History,LineDelivery,LineFriendship,LineSubscription,ProviderIdentity,SessionLocal,WebhookReceipt,get_db,utcnow,utc_isoformat
 from .oauth import aware,timeout_seconds
 from .security import client_limit,current_user
 
@@ -53,7 +53,7 @@ def settings(db,user):
     status="not_linked" if not identity else "awaiting_webhook" if not proof else "verified" if proof.following else "not_following"
     can_enable=cfg["configured"] and bool(identity) and status=="verified"
     delivery=db.scalar(select(LineDelivery).where(LineDelivery.user_id==user.id).order_by(LineDelivery.updated_at.desc()))
-    return {"configured":cfg["configured"],"linked":bool(identity),"enabled":bool(subscription and subscription.enabled),"friendship_status":status,"can_enable":can_enable,"official_account_url":cfg["official_account_url"],"last_delivery_status":delivery.status if delivery else None,"last_attempt_at":delivery.updated_at.isoformat() if delivery else None,"consent_scope":"saved_high_risk_results","message":"Only saved HIGH-risk results are sent after explicit consent. Messages contain score/level/time, no original input or personal identifiers." if can_enable else "LINE messaging needs configured credentials, explicit account linking and a signed follow webhook. Nothing has been sent."}
+    return {"configured":cfg["configured"],"linked":bool(identity),"enabled":bool(subscription and subscription.enabled),"friendship_status":status,"can_enable":can_enable,"official_account_url":cfg["official_account_url"],"last_delivery_status":delivery.status if delivery else None,"last_attempt_at":utc_isoformat(delivery.updated_at) if delivery else None,"consent_scope":"saved_high_risk_results","message":"Only saved HIGH-risk results are sent after explicit consent. Messages contain score/level/time, no original input or personal identifiers." if can_enable else "LINE messaging needs configured credentials, explicit account linking and a signed follow webhook. Nothing has been sent."}
 
 @router.get("",response_model=LineSettingsResponse)
 def get_settings(user=Depends(current_user),db=Depends(get_db)): return settings(db,user)

@@ -1,12 +1,43 @@
-# Node
+# Development dependencies and runtime
 node_modules/
-
-# Expo
+.venv/
+.runtime/
+__pycache__/
+*.pyc
+.pytest_cache/
 .expo/
+app/dist/
+ml/artifacts/embedding-model/
+work/
+.vercel/
+coverage/
 
-# macOS
+# Local/private configuration and signing
+.env
+.env.local
+.env.*
+!.env.example
+client_secret*.json
+*.pem
+*.key
+*.p12
+*.p8
+*.jks
+*.keystore
+*.mobileprovision
+*.db
+**/.xcode.env.local
+
+# Native build outputs; keep the existing iOS source project tracked
+**/Pods/
+**/build/
+**/DerivedData/
+.gradle/
+xcuserdata/
+*.xcuserstate
+
+# macOS and logs
 .DS_Store
-
-# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*

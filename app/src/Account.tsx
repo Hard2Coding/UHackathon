@@ -19,6 +19,7 @@ import { api, post } from "./api";
 import { startSocial, authErrorMessage } from "./social";
 import { GoogleMark } from "./Brand";
 import { ProtectionSettings } from "./ProtectionSettings";
+import { GradientSurface } from "./visual";
 import {
   Button,
   Panel,
@@ -144,10 +145,11 @@ export function AuthModal({
             </Button>
             <Button
               small
-              icon={MessageCircle}
+              secondary
+              icon={LineMark}
               disabled={busy}
               onPress={() => social("line")}
-              style={{ flex: 1, backgroundColor: "#00853b" }}
+              style={{ flex: 1 }}
             >
               LINE
             </Button>
@@ -239,7 +241,10 @@ export function SettingsPage({
   const [name, setName] = useState(user?.name || ""),
     [confirm, setConfirm] = useState(false),
     [email, setEmail] = useState("");
-  const placeholderEmail = user?.email.endsWith("@identity.scamgraph.invalid");
+  const placeholderEmail = user?.email_is_placeholder || user?.email.endsWith("@identity.scamgraph.invalid");
+  const displayEmail = placeholderEmail
+    ? t("บัญชีที่เชื่อมผ่านผู้ให้บริการ", "Linked provider account")
+    : user?.email.replace(/^(.).*(@.+)$/, "$1•••$2");
   const deleteConfirmation = placeholderEmail
     ? user?.name || "DELETE"
     : user?.email;
@@ -259,7 +264,7 @@ export function SettingsPage({
         paddingVertical: 15,
       }}
     >
-      <Icon size={22} color={c.teal} />
+      <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: c.soft, alignItems: "center", justifyContent: "center" }}><Icon size={20} color={c.teal} /></View>
       <View style={{ flex: 1 }}>
         <Txt bold size={14}>
           {title}
@@ -280,12 +285,29 @@ export function SettingsPage({
   return (
     <View style={{ gap: 20 }}>
       <Heading
-        title={t("ตั้งค่า", "Settings")}
+        title={t("โปรไฟล์และตั้งค่า", "Profile and settings")}
         subtitle={t(
           "ปรับการแสดงผลและจัดการข้อมูลของคุณ",
           "Personalize your experience and manage your data.",
         )}
       />
+      <Panel style={{ flexDirection: "row", alignItems: "center", gap: 17, padding: 22 }}>
+        <GradientSurface radius={23} colors={["#2a75e4", "#7051d8"]} style={{ width: 68, height: 68, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ zIndex: 1 }}>{user?.name ? <Txt bold size={27} style={{ color: "#fff" }}>{Array.from(user.name.trim())[0]?.toUpperCase() || "S"}</Txt> : <UserRound size={30} color="#fff" />}</View>
+        </GradientSurface>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Txt bold size={19}>{user?.name || t("ผู้ใช้ทั่วไป", "Guest")}</Txt>
+          <Txt muted size={12}>{user ? displayEmail : t("ยังไม่ได้เข้าสู่ระบบ", "You are not signed in")}</Txt>
+          <View style={{ flexDirection: "row", marginTop: 3 }}><Pill kind="muted">{user ? user.role === "admin" ? t("ผู้ดูแลระบบ", "Administrator") : t("บัญชีของคุณ", "Your account") : t("Guest mode", "Guest mode")}</Pill></View>
+        </View>
+      </Panel>
+      <GradientSurface radius={24} colors={["#193f81", "#3260b4", "#4857ba"]} style={{ padding: 22, flexDirection: "row", alignItems: "center", gap: 17, boxShadow: "0px 10px 25px rgba(32, 70, 141, 0.13)" }}>
+        <View style={{ width: 54, height: 54, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}><ShieldCheck size={30} color="#cbfff1" /></View>
+        <View style={{ flex: 1 }}>
+          <Txt bold size={15} style={{ color: "#fff" }}>{t("ตั้งค่าการป้องกันในแบบของคุณ", "Set up your protection")}</Txt>
+          <Txt size={11} style={{ color: "#e5efff", marginTop: 4 }}>{t("จัดการบัญชี การแจ้งเตือน LINE และสิทธิ์ตรวจสายเรียกเข้าด้านล่าง", "Manage your account, LINE alerts and caller protection below.")}</Txt>
+        </View>
+      </GradientSurface>
       <Panel>
         <Txt bold size={17}>
           {t("การแสดงผล", "Appearance")}
@@ -316,7 +338,7 @@ export function SettingsPage({
             <Pill kind="muted">
               {placeholderEmail
                 ? t("บัญชีที่เชื่อมผ่านผู้ให้บริการ", "Linked provider account")
-                : user.email}{" "}
+                : displayEmail}{" "}
               ·{" "}
               {user.role === "admin"
                 ? t("ผู้ดูแล", "Administrator")
@@ -447,4 +469,8 @@ export function SettingsPage({
       </Panel>
     </View>
   );
+}
+
+function LineMark() {
+  return <View style={{ width: 23, height: 23, borderRadius: 6, backgroundColor: "#06c755", alignItems: "center", justifyContent: "center" }}><MessageCircle size={17} fill="#fff" color="#fff" stroke="#06c755" /></View>;
 }

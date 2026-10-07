@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env", override=False)
 parser = argparse.ArgumentParser()
 parser.add_argument("--sqlite-demo", action="store_true")
+parser.add_argument("--reload", action="store_true", help="Reload local API code in backend/ and ml/ during development")
 args = parser.parse_args()
 (ROOT / ".runtime").mkdir(exist_ok=True)
 if args.sqlite_demo:
@@ -35,4 +36,10 @@ if not (artifact_dir / "models.joblib").exists():
     run("-m", "ml", "evaluate", "ml/datasets/sample.jsonl", "--artifacts", str(artifact_dir))
 port = os.environ.get("API_PORT", "8000")
 print(f"ScamGraph API: {'SQLite local demo' if args.sqlite_demo else 'configured database'}; http://localhost:{port}/docs", flush=True)
-os.execv(sys.executable, [sys.executable, "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", port, "--no-access-log"])
+command = [sys.executable, "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", port, "--no-access-log"]
+if args.reload:
+    command += ["--reload", "--reload-dir", str(ROOT / "backend"), "--reload-dir", str(ROOT / "ml")]
+    # watchfiles may be optional; Uvicorn's standard Python watcher still works.
+    # Never watch model weights, uploads, or runtime databases.
+    command += ["--reload-exclude", "artifacts/*", "--reload-exclude", "datasets/*", "--reload-exclude", "__pycache__/*"]
+os.execv(sys.executable, command)
