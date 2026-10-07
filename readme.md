@@ -10,7 +10,7 @@ The branding follows the supplied `ScamGraph AI.png` reference: an S symbol, net
 
 ## Current UI and Webapp
 
-The interface follows the supplied mobile and desktop references. The opening screen contains the logo and Google, LINE, email login, and registration options. The Dashboard has four scan categories, bottom navigation on mobile, and a left sidebar on desktop. The light theme uses white/light blue with blue–purple gradient buttons; dark mode and Thai/English language switching are available. Entrance effects finish quickly and respect the operating system's reduced-motion preference. Buttons have hover/focus glow while login choices remain visible.
+The interface follows the supplied mobile and desktop references. The opening screen contains the logo and Google, LINE, email login, and registration options. The Dashboard has four scan categories, bottom navigation on mobile, and a left sidebar on desktop. The light theme uses white/light blue with blue–purple gradient buttons; dark mode and Thai/English language switching are available. Web sections reveal once when scrolled into view. Desktop branding and scan shortcuts have subtle pointer glow and tilt, with readable text and keyboard focus borders. Effects respect reduced-motion settings and stop on hidden pages; touch and native screens keep stable surfaces. The seven-day web chart supports selecting a day by pointer, keyboard, or press to inspect its actual saved count.
 
 Dashboard totals and the seven-day chart use up to 300 saved records from the current user's history. The alerts page opens saved HIGH-risk results, and the help center provides searchable FAQs. The Webapp includes a manifest, icons, and a service worker for supported browsers. Updates wait for user confirmation before reloading. Only public app assets are cached; API responses, analysis results, and uploaded images are not cached. Analysis and private account data require an online connection.
 
@@ -18,7 +18,7 @@ Google Cloud and LINE projects have not been configured, so real provider login 
 
 ## Shared App + Web Source and Updates
 
-The primary repository is `Hard2Coding/UHackathon`, on branch `DevTutor`. Mobile and web share `app/App.tsx`, `app/src`, and `shared`; the API and models live in `backend` and `ml`. Screens do not need to be copied between separate projects.
+The primary repository is `Hard2Coding/UHackathon`, with `main` as its default branch and `DevTutor` for development. Mobile and web share `app/App.tsx`, `app/src`, and `shared`; the API and models live in `backend` and `ml`. Screens do not need to be copied between separate projects. The pinned repository on [Kitsanapuch's profile](https://github.com/Kitsanapuch) links directly to this team repository, so it always opens the same project.
 
 After installing dependencies, run `npm run dev` from the repository root. It starts API reload and one Expo Metro server for web and native development clients. Both platforms consume the shared source. `npm run ios` and `npm run android` build/install the native app using the running Metro server. See [DEVELOPMENT.md](DEVELOPMENT.md) for LAN addresses and port configuration.
 
@@ -26,13 +26,14 @@ The web build supports Vercel: import the repository at its root and set `EXPO_P
 
 ## Team Credits
 
-**Repository owner:** [Hard2Coding](https://github.com/Hard2Coding)
+**Repository owner:** [Thanakorn Morasilp (Hard2Coding)](https://github.com/Hard2Coding)
 
 | Team member | Role |
 |---|---|
+| [Thanakorn Morasilp](https://www.linkedin.com/in/thanakorn-morasilp-b2b954264/) | Development · Project owner |
 | Phutawan Sathusarn | Product |
 | Achiraya Sungsriin | UX/UI |
-| [Kitsanapuch](https://github.com/Kitsanapuch) | Development contributor |
+| [Kitsanapuch](https://github.com/Kitsanapuch) | Development |
 
 ## Repository Layout
 

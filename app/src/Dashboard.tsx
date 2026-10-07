@@ -3,12 +3,37 @@ import { View, Pressable, useWindowDimensions, ActivityIndicator } from "react-n
 import Svg, { Polyline, Line, Circle } from "react-native-svg";
 import { Link, Phone, Landmark, ImagePlus, ShieldCheck, ArrowRight, Bell, Network, FileSpreadsheet, QrCode, BookOpen, Flag, RefreshCw } from "lucide-react-native";
 import { Txt, Panel, Button, Field, Pill, useUI, useCopy, levelCopy } from "./ui";
-import { MotionView, GradientSurface } from "./visual";
+import { InteractiveSurface, MotionView, GradientSurface } from "./visual";
 import { BrandMark } from "./Brand";
 import { Checker, examples } from "./Check";
 import type { InputKind } from "./Check";
 import type { User } from "../../shared/api";
 import { api } from "./api";
+
+function ScanShortcut({ Icon, label, detail, color, background, onPress, wide, dark }: {
+  Icon: typeof Link;
+  label: string;
+  detail: string;
+  color: string;
+  background: string;
+  onPress: () => void;
+  wide: boolean;
+  dark: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  return <InteractiveSurface enabled={wide} radius={22} glow={dark ? "rgba(145, 145, 255, 0.17)" : "rgba(255, 255, 255, 0.62)"} style={{ flex: 1 }} surfaceStyle={{ backgroundColor: background }}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+      onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+      style={({ pressed }) => ({ flex: 1, borderRadius: 22, padding: wide ? 23 : 18, minHeight: 142, gap: 8, alignItems: wide ? "flex-start" : "center", transform: [{ scale: pressed ? 0.98 : 1 }], borderWidth: 1, borderColor: focused ? color : dark ? "#ffffff0c" : "#ffffffb3", boxShadow: focused ? "0 0 0 3px rgba(98, 113, 225, 0.18)" : undefined })}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", width: wide ? "100%" : undefined }}>
+        <Icon size={29} color={color} strokeWidth={1.8} />
+        {wide && <ArrowRight size={16} color={color} style={{ opacity: 0.65 }} />}
+      </View>
+      <Txt bold size={15} style={{ color }}>{label}</Txt>
+      <Txt muted size={10} style={{ textAlign: wide ? "left" : "center" }}>{detail}</Txt>
+    </Pressable>
+  </InteractiveSurface>;
+}
 
 export function Home({ checker, health, onExample, onGo, user }: {
   checker: React.ComponentProps<typeof Checker>;
@@ -21,6 +46,7 @@ export function Home({ checker, health, onExample, onGo, user }: {
   const wide = width >= 980;
   const [records, setRecords] = useState<any[]>([]), [loading, setLoading] = useState(false), [error, setError] = useState("");
   const [refresh, setRefresh] = useState(0);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null), [focusedDay, setFocusedDay] = useState<number | null>(null);
   useEffect(() => {
     let active = true;
     setRecords([]); setError("");
@@ -40,6 +66,9 @@ export function Home({ checker, health, onExample, onGo, user }: {
   });
   const top = Math.max(1, ...days.map(x => x.count));
   const points = days.map((x, i) => `${14 + i * 44},${76 - x.count / top * 54}`).join(" ");
+  const selected = selectedDay === null ? null : days[selectedDay];
+  const selectedX = selectedDay === null ? 0 : 14 + selectedDay * 44;
+  const selectedY = selected ? 76 - selected.count / top * 54 : 0;
   const quickActions = [
     { Icon: Link, th: "สแกนลิงก์", en: "Scan a link", detail: t("ตรวจข้อความและ URL", "Messages and URLs"), color: dark ? "#b5a5ff" : "#5946d7", bg: dark ? "#242045" : "#eeebff", action: () => onExample("", "url") },
     { Icon: Phone, th: "สแกนเบอร์", en: "Scan a number", detail: t("ตรวจเบอร์โทรศัพท์", "Phone numbers"), color: dark ? "#67d8cd" : "#147b77", bg: dark ? "#102f36" : "#e5f7f5", action: () => onExample("", "phone") },
@@ -65,11 +94,7 @@ export function Home({ checker, health, onExample, onGo, user }: {
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
       {quickActions.map(({ Icon, th, en, detail, color, bg, action }, index) =>
         <MotionView key={en} delay={index * 45} style={{ width: wide ? "23.5%" : "48%", flexGrow: 1 }}>
-          <Pressable accessibilityRole="button" onPress={action} style={({ pressed }) => ({ borderRadius: 22, backgroundColor: bg, padding: wide ? 23 : 18, minHeight: 142, gap: 8, alignItems: wide ? "flex-start" : "center", transform: [{ scale: pressed ? 0.98 : 1 }], borderWidth: 1, borderColor: dark ? "#ffffff0c" : "#ffffffb3" })}>
-            <Icon size={29} color={color} strokeWidth={1.8} />
-            <Txt bold size={15} style={{ color }}>{t(th, en)}</Txt>
-            <Txt muted size={10} style={{ textAlign: wide ? "left" : "center" }}>{detail}</Txt>
-          </Pressable>
+          <ScanShortcut Icon={Icon} label={t(th, en)} detail={detail} color={color} background={bg} onPress={action} wide={wide} dark={dark} />
         </MotionView>)}
     </View>
     <View style={{ flexDirection: wide ? "row" : "column", gap: 16 }}>
@@ -87,12 +112,26 @@ export function Home({ checker, health, onExample, onGo, user }: {
       </Panel>
       {wide && <Panel style={{ flex: 1, padding: 20, gap: 8 }}>
         <Txt bold size={15}>{t("รายการที่บันทึกใน 7 วัน", "Saved items over 7 days")}</Txt>
-        {user && !loading && !error ? <><Svg viewBox="0 0 292 92" height={90} width="100%" accessibilityLabel={t("กราฟจำนวนรายการที่คุณบันทึกในเจ็ดวัน", "Your seven-day saved item counts")}>
+        {user && !loading && !error ? <>
+        <View accessibilityLiveRegion="polite" style={{ minHeight: 31, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 9, backgroundColor: c.soft }}>
+          <Txt size={11} style={{ color: selected ? c.teal : c.muted }}>
+            {selected ? `${selected.date.toLocaleDateString(english ? "en-GB" : "th-TH", { day: "numeric", month: "short" })} · ${t(`บันทึก ${selected.count} รายการ`, `${selected.count} saved ${selected.count === 1 ? "item" : "items"}`)}` : t("เลือกวันที่เพื่อดูจำนวนที่บันทึก", "Select a day to inspect its saved count")}
+          </Txt>
+        </View>
+        <Svg viewBox="0 0 292 92" height={90} width="100%" accessibilityLabel={t("กราฟจำนวนรายการที่คุณบันทึกในเจ็ดวัน", "Your seven-day saved item counts")}>
           {[25, 50, 76].map(y => <Line key={y} x1={14} x2={278} y1={y} y2={y} stroke={c.line} strokeDasharray="3 5" />)}
+          {selected && <><Line x1={selectedX} x2={selectedX} y1={15} y2={80} stroke={c.teal} strokeDasharray="3 4" opacity={0.5} /><Line x1={14} x2={278} y1={selectedY} y2={selectedY} stroke={c.teal} strokeDasharray="3 4" opacity={0.3} /></>}
           <Polyline points={points} fill="none" stroke={c.teal} strokeWidth={2.5} />
           {days.map((x, i) => <Circle key={i} cx={14 + i * 44} cy={76 - x.count / top * 54} r={3.5} fill={c.teal} />)}
+          {selected && <Circle cx={selectedX} cy={selectedY} r={5} fill={c.card} stroke={c.teal} strokeWidth={2.2} />}
         </Svg>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>{days.map((x, i) => <Txt key={i} muted size={9}>{x.date.toLocaleDateString(english ? "en-GB" : "th-TH", { weekday: "short" })}</Txt>)}</View></> : <View style={{ flex: 1, justifyContent: "center", gap: 10 }}><BookOpen size={26} color={c.teal} /><Txt muted size={12}>{t("บันทึกผลตรวจเมื่อเข้าสู่ระบบ เพื่อดูภาพรวมและรายการย้อนหลังของคุณ", "Sign in and save results to see your overview and activity")}</Txt></View>}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 3 }}>{days.map((x, i) => <Pressable key={i} accessibilityRole="button"
+          accessibilityLabel={`${x.date.toLocaleDateString(english ? "en-GB" : "th-TH", { weekday: "long", day: "numeric", month: "short", year: "numeric" })} · ${t(`บันทึก ${x.count} รายการ`, `${x.count} saved ${x.count === 1 ? "item" : "items"}`)}${selectedDay === i ? t(" · เลือกอยู่", " · selected") : ""}`}
+          accessibilityHint={t("เลือกเพื่อดูจุดและจำนวนของวันนี้", "Select to inspect this date's chart point")}
+          onHoverIn={() => setSelectedDay(i)} onFocus={() => { setSelectedDay(i); setFocusedDay(i); }} onBlur={() => setFocusedDay(null)} onPress={() => setSelectedDay(i)}
+          style={({ pressed }) => ({ flex: 1, minHeight: 36, justifyContent: "center", alignItems: "center", borderRadius: 8, borderWidth: 1, borderColor: focusedDay === i ? c.teal : "transparent", backgroundColor: selectedDay === i ? c.soft : "transparent", opacity: pressed ? 0.7 : 1 })}>
+            <Txt bold={selectedDay === i} size={10} style={{ color: selectedDay === i ? c.teal : c.muted }}>{x.date.toLocaleDateString(english ? "en-GB" : "th-TH", { weekday: "short" })}</Txt>
+          </Pressable>)}</View></> : <View style={{ flex: 1, justifyContent: "center", gap: 10 }}><BookOpen size={26} color={c.teal} /><Txt muted size={12}>{t("บันทึกผลตรวจเมื่อเข้าสู่ระบบ เพื่อดูภาพรวมและรายการย้อนหลังของคุณ", "Sign in and save results to see your overview and activity")}</Txt></View>}
       </Panel>}
     </View>
     <Pressable accessibilityRole="button" onPress={() => onGo(latestRisk ? "alerts" : "settings")}>
