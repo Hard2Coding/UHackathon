@@ -97,6 +97,13 @@ import { useCallerEvidenceRefresh } from "./src/callerSync";
 import { AdminPage } from "./src/Admin";
 import type { User, Analysis, GraphData, Job } from "../shared/api";
 
+type ResultSnapshot = Readonly<{
+  text: string;
+  kind: InputKind;
+  analysisId: string;
+  historyId: string | null;
+}>;
+
 const menus = [
   ["home", House, "หน้าหลัก", "Home"],
   ["check", ScanLine, "ตรวจสอบ", "Analyze"],
@@ -143,8 +150,13 @@ export default function App() {
   const scanLock = useRef(false);
   const [batchJob, setBatchJob] = useState<Job | null>(null),
     [batchOpen, setBatchOpen] = useState(false),
-    [savedId, setSavedId] = useState<string | null>(null),
-    [reportText, setReportText] = useState("");
+    [reportText, setReportText] = useState(""),
+    [reportKind, setReportKind] = useState<InputKind>("text");
+  const currentBatchJob = useRef<Job | null>(null);
+  const updateBatchJob = (next: Job | null) => {
+    currentBatchJob.current = next;
+    setBatchJob(next);
+  };
   const [graph, setGraph] = useState<GraphData | null>(null),
     [graphError, setGraphError] = useState(""),
     [includeSample, setIncludeSample] = useState(true);
@@ -157,6 +169,8 @@ export default function App() {
   const queuedOAuthUrl = useRef<string | null>(null);
   const handledOAuthUrls = useRef(new Set<string>());
   const privateGeneration = useRef(0);
+  const analysisRevision = useRef(0);
+  const resultSnapshot = useRef<ResultSnapshot | null>(null);
   const viewGeneration = privateGeneration.current;
   const tokenWrites = useRef<Promise<void>>(Promise.resolve());
   const persistToken = (action: () => Promise<void>) => {
@@ -174,6 +188,39 @@ export default function App() {
   const navigate = (next: string) => {
     setPage(next);
     scroll.current?.scrollTo({ y: 0, animated: false });
+  };
+  const invalidateAnalysis = () => {
+    analysisRevision.current += 1;
+    resultSnapshot.current = null;
+    setResult(null);
+    setBusy(false);
+  };
+  const editText = (value: string) => {
+    invalidateAnalysis();
+    setText(value);
+  };
+  const editKind = (value: InputKind) => {
+    invalidateAnalysis();
+    setKind(value);
+  };
+  const displayResult = (
+    next: Analysis,
+    input: string,
+    type: InputKind,
+    historyId: string | null = null,
+  ) => {
+    // The visible result always owns its input. Draft edits and older requests
+    // cannot change the content used by Save, Share, Export or Report.
+    analysisRevision.current += 1;
+    resultSnapshot.current = { text: input, kind: type, analysisId: next.id, historyId };
+    setText(input);
+    setKind(type);
+    setResult(next);
+    setBusy(false);
+  };
+  const currentResultSnapshot = () => {
+    const snapshot = resultSnapshot.current;
+    return result && snapshot?.analysisId === result.id ? snapshot : null;
   };
   const setDark = (v: boolean) => {
     setDarkValue(v);
@@ -328,18 +375,17 @@ export default function App() {
   };
   const resetPrivateViews = () => {
     privateGeneration.current += 1;
-    setBatchJob(null);
-    setResult(null);
+    invalidateAnalysis();
+    updateBatchJob(null);
     setText("");
-    setSavedId(null);
     setReportText("");
+    setReportKind("text");
     setKind("text");
     setPreview(null);
     setScannerOpen(false);
     scanLock.current = false;
     setAuthOpen(false);
     setBatchOpen(false);
-    setBusy(false);
     setUploadBusy(false);
     setGraph(null);
     setGraphError("");
@@ -411,23 +457,24 @@ export default function App() {
       );
       return;
     }
+    invalidateAnalysis();
+    const revision = analysisRevision.current;
+    setText(input);
+    setKind(type);
     setBusy(true);
     try {
       const data = await post<Analysis>("/analyze", {
         text: input.trim(),
         kind: type,
       });
-      if (generation !== privateGeneration.current) return;
-      setText(input);
-      setKind(type);
-      setResult(data);
-      setSavedId(null);
+      if (generation !== privateGeneration.current || revision !== analysisRevision.current) return;
+      displayResult(data, input.trim(), type);
       navigate("check");
       notify(t("วิเคราะห์เสร็จแล้ว", "Analysis complete"));
     } catch (e: any) {
-      if (generation === privateGeneration.current) notify(e.message, true);
+      if (generation === privateGeneration.current && revision === analysisRevision.current) notify(e.message, true);
     } finally {
-      if (generation === privateGeneration.current) setBusy(false);
+      if (generation === privateGeneration.current && revision === analysisRevision.current) setBusy(false);
     }
   };
   const decodePayload = async (payload: string) => {
@@ -470,7 +517,7 @@ export default function App() {
           body,
         });
         if (generation !== privateGeneration.current) return;
-        setBatchJob(job);
+        updateBatchJob(job);
         setBatchOpen(true);
       } catch (e: any) {
         if (generation === privateGeneration.current) notify(e.message, true);
@@ -617,9 +664,9 @@ export default function App() {
     const timer = setInterval(async () => {
       try {
         const updated = await api<Job>(`/jobs/${batchJob.id}`);
-        if (generation === privateGeneration.current) setBatchJob(updated);
+        if (generation === privateGeneration.current && currentBatchJob.current?.id === batchJob.id) updateBatchJob(updated);
       } catch (e: any) {
-        if (generation === privateGeneration.current) notify(e.message, true);
+        if (generation === privateGeneration.current && currentBatchJob.current?.id === batchJob.id) notify(e.message, true);
         clearInterval(timer);
       }
     }, 1500);
@@ -627,7 +674,9 @@ export default function App() {
   }, [batchJob?.id, batchJob?.status]);
   const save = async () => {
     const generation = privateGeneration.current;
-    if (savedId) {
+    const snapshot = currentResultSnapshot();
+    if (!snapshot) return;
+    if (snapshot.historyId) {
       notify(t("ผลนี้บันทึกแล้ว", "This result is already saved"));
       return;
     }
@@ -637,23 +686,26 @@ export default function App() {
     }
     setBusy(true);
     try {
-      const row = await post("/history", { text, kind });
-      if (generation !== privateGeneration.current) return;
-      setSavedId(row.id);
-      setResult(row.result);
+      const row = await post("/history", { text: snapshot.text, kind: snapshot.kind });
+      if (generation !== privateGeneration.current || snapshot !== resultSnapshot.current) return;
+      displayResult(row.result, snapshot.text, snapshot.kind, row.id);
       notify(
         t("บันทึกผลในประวัติส่วนตัวแล้ว", "Saved to your private history"),
       );
     } catch (e: any) {
-      if (generation === privateGeneration.current) notify(e.message, true);
+      if (generation === privateGeneration.current && snapshot === resultSnapshot.current) notify(e.message, true);
     } finally {
-      if (generation === privateGeneration.current) setBusy(false);
+      if (generation === privateGeneration.current && snapshot === resultSnapshot.current) setBusy(false);
     }
   };
   const exportObject = async (
     data: unknown,
     filename = "scamgraph-report.json",
+    isCurrent: () => boolean = () => true,
   ) => {
+    const generation = privateGeneration.current;
+    const active = () => generation === privateGeneration.current && isCurrent();
+    if (!active()) return;
     const contents = JSON.stringify(data, null, 2);
     if (Platform.OS === "web") {
       const url = URL.createObjectURL(
@@ -665,29 +717,40 @@ export default function App() {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } else {
+      const sharingAvailable = await Sharing.isAvailableAsync();
+      if (!active()) return;
       const file = new File(Paths.cache, filename);
       file.create({ overwrite: true });
       file.write(contents);
-      if (await Sharing.isAvailableAsync())
+      if (sharingAvailable)
         await Sharing.shareAsync(file.uri, { mimeType: "application/json" });
       else await Clipboard.setStringAsync(contents);
     }
-    notify(t("ส่งออกข้อมูลแบบปกปิดแล้ว", "Masked data exported"));
+    if (active()) notify(t("ส่งออกข้อมูลแบบปกปิดแล้ว", "Masked data exported"));
   };
-  const maskedReport = async () =>
-    savedId
-      ? api(`/history/${savedId}/share`)
-      : post("/export", { text, kind });
+  const maskedReport = async (snapshot: ResultSnapshot) =>
+    snapshot.historyId
+      ? api(`/history/${snapshot.historyId}/share`)
+      : post("/export", { text: snapshot.text, kind: snapshot.kind });
   const exportReport = async () => {
+    const snapshot = currentResultSnapshot();
+    if (!snapshot) return;
+    const generation = privateGeneration.current;
     try {
-      await exportObject(await maskedReport());
+      const data = await maskedReport(snapshot);
+      if (generation !== privateGeneration.current || snapshot !== resultSnapshot.current) return;
+      await exportObject(data, "scamgraph-report.json", () => snapshot === resultSnapshot.current);
     } catch (e: any) {
-      notify(e.message, true);
+      if (generation === privateGeneration.current && snapshot === resultSnapshot.current) notify(e.message, true);
     }
   };
   const shareReport = async () => {
+    const snapshot = currentResultSnapshot();
+    if (!snapshot) return;
+    const generation = privateGeneration.current;
     try {
-      const data = await maskedReport();
+      const data = await maskedReport(snapshot);
+      if (generation !== privateGeneration.current || snapshot !== resultSnapshot.current) return;
       const r = data.result;
       const message = `ScamGraph AI\n${t("คะแนนความเสี่ยง", "Risk score")}: ${r.score ?? "—"}/100 · ${r.level}\n${r.summary}\n${(r.entities || []).map((e: any) => `${e.type}: ${e.value}`).join("\n")}\n${t("ปกปิดข้อมูลส่วนบุคคล • ไม่ใช่คำตัดสินว่ามีการโกง", "Personal identifiers masked · Not a fraud verdict")}`;
       if (Platform.OS === "web") {
@@ -699,16 +762,19 @@ export default function App() {
         }
       } else await Share.share({ message, title: "ScamGraph AI" });
     } catch (e: any) {
-      if (e.name !== "AbortError") notify(e.message, true);
+      if (e.name !== "AbortError" && generation === privateGeneration.current && snapshot === resultSnapshot.current) notify(e.message, true);
     }
   };
   const feedback = async (correct: boolean) => {
-    if (!result) return;
+    const snapshot = currentResultSnapshot();
+    if (!snapshot) return;
+    const generation = privateGeneration.current;
     try {
       await post("/feedback", {
-        analysis_id: result.id,
+        analysis_id: snapshot.analysisId,
         verdict: correct ? "correct" : "incorrect",
       });
+      if (generation !== privateGeneration.current || snapshot !== resultSnapshot.current) return;
       notify(
         t(
           "รับ feedback แล้ว จะตรวจสอบก่อนใช้ข้อมูล",
@@ -716,7 +782,7 @@ export default function App() {
         ),
       );
     } catch (e: any) {
-      notify(e.message, true);
+      if (generation === privateGeneration.current && snapshot === resultSnapshot.current) notify(e.message, true);
     }
   };
   const loadGraph = async () => {
@@ -732,9 +798,9 @@ export default function App() {
   }, [page, includeSample]);
   const checker = {
     text,
-    setText,
+    setText: editText,
     kind,
-    setKind,
+    setKind: editKind,
     busy,
     analyze: () => analyze(),
     media,
@@ -1047,9 +1113,9 @@ export default function App() {
                   health={health}
                   user={user}
                   onExample={(input, type) => {
+                    invalidateAnalysis();
                     setText(input);
                     setKind(type);
-                    setResult(null);
                     navigate("check");
                   }}
                   onGo={navigate}
@@ -1061,15 +1127,17 @@ export default function App() {
                     result={result}
                     busy={busy}
                     onBack={() => {
-                      setResult(null);
+                      invalidateAnalysis();
                       setText("");
-                      setSavedId(null);
                     }}
                     onSave={save}
                     onShare={shareReport}
                     onExport={exportReport}
                     onReport={() => {
-                      setReportText(text);
+                      const snapshot = currentResultSnapshot();
+                      if (!snapshot) return;
+                      setReportText(snapshot.text);
+                      setReportKind(snapshot.kind);
                       navigate("reports");
                     }}
                     onFeedback={feedback}
@@ -1144,10 +1212,7 @@ export default function App() {
                       currentUser.current?.id !== user.id
                     )
                       return;
-                    setResult(r);
-                    setText(input);
-                    setKind(type as InputKind);
-                    setSavedId(id);
+                    displayResult(r, input, type as InputKind, id);
                     navigate("check");
                   }}
                 />
@@ -1158,10 +1223,11 @@ export default function App() {
                   onLogin={() => setAuthOpen(true)}
                   notify={notify}
                   initialText={reportText}
+                  initialKind={reportKind}
                 />
               )}
               {page === "help" && <HelpPage onGo={navigate} />}
-              {page === "alerts" && <AlertsPage user={user} onLogin={() => setAuthOpen(true)} onGo={navigate} onOpen={(r, input, type, id) => { if (viewGeneration !== privateGeneration.current || !user || currentUser.current?.id !== user.id) return; setResult(r); setText(input); setKind(type as InputKind); setSavedId(id); navigate("check"); }} />}
+              {page === "alerts" && <AlertsPage user={user} onLogin={() => setAuthOpen(true)} onGo={navigate} onOpen={(r, input, type, id) => { if (viewGeneration !== privateGeneration.current || !user || currentUser.current?.id !== user.id) return; displayResult(r, input, type as InputKind, id); navigate("check"); }} />}
               {page === "settings" && (
                 <View>
                 <WebappPanel state={webapp} install={webapp.install} applyUpdate={webapp.applyUpdate} />
@@ -1185,9 +1251,9 @@ export default function App() {
                     try {
                       const data = await api("/auth/export");
                       if (viewGeneration !== privateGeneration.current) return;
-                      await exportObject(data, "scamgraph-my-data.json");
+                      await exportObject(data, "scamgraph-my-data.json", () => viewGeneration === privateGeneration.current);
                     } catch (e: any) {
-                      notify(e.message, true);
+                      if (viewGeneration === privateGeneration.current) notify(e.message, true);
                     }
                   }}
                   onDelete={async () => {
@@ -1608,13 +1674,20 @@ export default function App() {
                           secondary
                           icon={Download}
                           onPress={async () => {
+                            const generation = privateGeneration.current;
+                            const jobId = batchJob?.id;
+                            const active = () => generation === privateGeneration.current && currentBatchJob.current?.id === jobId;
+                            if (!jobId || !active()) return;
                             try {
+                              const data = await api(`/jobs/${jobId}/export`);
+                              if (!active()) return;
                               await exportObject(
-                                await api(`/jobs/${batchJob?.id}/export`),
+                                data,
                                 "scamgraph-batch.json",
+                                active,
                               );
                             } catch (e: any) {
-                              notify(e.message, true);
+                              if (active()) notify(e.message, true);
                             }
                           }}
                         >
@@ -1646,10 +1719,7 @@ export default function App() {
                                   small
                                   secondary
                                   onPress={() => {
-                                    setResult(row.result);
-                                    setText(row.text || "");
-                                    setKind(row.kind || "text");
-                                    setSavedId(null);
+                                    displayResult(row.result, row.text || "", row.kind || "text");
                                     setBatchOpen(false);
                                     navigate("check");
                                   }}

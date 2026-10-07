@@ -6,7 +6,7 @@
 
 `.github/workflows/shared-app.yml` รันอัตโนมัติเมื่อ push ทุก branch หรือเปิด/อัปเดต pull request และสั่งรันเองได้ใน GitHub Actions:
 
-1. ติดตั้ง frontend จาก `app/package-lock.json` แล้วตรวจ TypeScript, 12 login/privacy flows และพฤติกรรม service worker
+1. ติดตั้ง frontend จาก `app/package-lock.json` แล้วตรวจ TypeScript, login/privacy/report flows และพฤติกรรม service worker
 2. ติดตั้ง backend จาก lockfile ด้วย CPU-only Torch และ Tesseract `tha+eng` แล้วตรวจ API/ML, validation และ evaluation ของโมเดลขนาดเล็กที่อยู่ใน repo
 3. เมื่อ checks ผ่าน จึง export Web, Android และ iOS จาก source commit เดียวกัน และแนบ artifacts ไว้ใน workflow run เป็นเวลา 14 วัน
 

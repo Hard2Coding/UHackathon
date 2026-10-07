@@ -222,7 +222,7 @@ npx expo run:ios --device
 
 คำสั่งจะทำ prebuild เมื่อยังไม่มี native project ใช้ bundle ID `ai.scamgraph.app` และ App Group `group.ai.scamgraph.app` กับ target `ScamGraphCallerDirectory` ตาม config plugin ต้องตั้ง provisioning/signing ให้ตรงทั้งแอพและ extension แล้วเปิดสิทธิ์ผ่าน Settings บนเครื่องจริง เมื่อเปลี่ยน native dependency/config ให้ regenerate ตาม [Expo development-build guide](https://docs.expo.dev/develop/development-builds/introduction/)
 
-คำสั่ง device build ข้างต้นเป็นขั้นตอนสำหรับเครื่องที่เตรียม toolchain/signing แล้ว ยังไม่ได้รันติดตั้งหรือรับสายจริงใน environment ส่งมอบ มีการ compile isolated unsigned iOS Simulator `.appex` สำเร็จ แต่ยังไม่ใช่ full host app build/entitlements/device verification
+ตรวจ full iOS Simulator Debug host พร้อม embedded Call Directory extension ผ่านแล้ว และติดตั้ง/เปิดแอพบน iPhone 17 Simulator (iOS 26.5) ด้วย local ad-hoc signing โดยใช้ Metro ร่วมกับเว็บ การเปิดแบบ unsigned ทำให้ SecureStore อ่าน Keychain ไม่ได้ จึงต้องใช้ build ที่มี application entitlements ตามปกติ ตรวจหน้าล็อกอิน เข้า Dashboard และวิเคราะห์ข้อความผ่าน API ร่วมได้โดยไม่มีข้อผิดพลาด Keychain แล้ว ส่วน physical-device signing/installation, release IPA และสายโทรเข้าจริงยังไม่ได้ตรวจ
 
 ไม่ตั้ง LLM key แอพใช้คำอธิบาย template จาก structured evidence และยังใช้งานได้ หากตั้ง `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` ผ่าน environment จะเรียก endpoint ที่เข้ากันกับ `/chat/completions` โดยให้เลือก evidence IDs ที่มีอยู่แล้วเท่านั้น ถ้า timeout/ตอบผิด format จะ fallback และแสดงสถานะ ไม่มีการนำ provider prose มาเพิ่มประวัติหรือแหล่งอ้างอิงที่ไม่อยู่ในระบบ
 

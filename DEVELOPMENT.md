@@ -4,7 +4,7 @@
 
 ## เริ่มพร้อมกัน
 
-ต้องใช้ Node.js 20 ขึ้นไป และ Python 3.12 ติดตั้ง dependencies ครั้งแรกด้วยคำสั่งนี้จากโฟลเดอร์ repository:
+ต้องใช้ Node.js 22 ขึ้นไป และ Python 3.12 ติดตั้ง dependencies ครั้งแรกด้วยคำสั่งนี้จากโฟลเดอร์ repository:
 
 ```bash
 bash scripts/bootstrap.sh
@@ -61,6 +61,8 @@ EXPO_PUBLIC_API_URL=https://api.your-domain.example/api npm run dev -- --remote-
 ค่าเริ่มต้นใช้ `--dev-client` เพราะฟังก์ชันตรวจสายเรียกเข้าใช้ native module ที่ Expo Go ไม่มี Android ต้องมี JDK/Android SDK และ iOS ต้องมี macOS/Xcode/CocoaPods พร้อม signing ตามอุปกรณ์ที่เลือก การตรวจสายต้องให้สิทธิ์และเปิด role/extension บนเครื่องจริง เว็บและ Expo Go แสดงข้อจำกัดอย่างตรงไปตรงมา
 
 คำสั่ง `android`/`ios` ใช้ `--no-bundler` เพื่อไม่สร้าง Metro อีกตัว ให้เปิด `npm run dev` ใน terminal อีกหน้าต่างและเชื่อม development client กับ Metro ที่ runner แสดง
+
+ตรวจ iPhone 17 Simulator (iOS 26.5) กับ Metro8091/API8011 ผ่านแล้ว บน Xcode27 เครื่องมือหน้าจออุปกรณ์อยู่ที่ `Xcode.app/Contents/Applications/DeviceHub.app` ใช้ Debug build ที่มีการ sign สำหรับ Simulator ตามปกติ; การปิด signing ด้วย `CODE_SIGNING_ALLOWED=NO` ทำให้ application entitlements ขาดและ SecureStore อ่าน Keychain ไม่ได้ Local ad-hoc Simulator signing ไม่ใช่ provisioning สำหรับโทรศัพท์จริง
 
 หากต้องการฐานข้อมูลที่ตั้งผ่าน `DATABASE_URL` แทน SQLite ให้ใช้ `npm run dev -- --configured-db` คำสั่งพัฒนานี้ตั้ง `APP_ENV=development` เสมอ จึงควรชี้ไปฐานข้อมูลพัฒนาเท่านั้น
 

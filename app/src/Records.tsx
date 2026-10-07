@@ -14,6 +14,7 @@ import {
 import * as DocumentPicker from "expo-document-picker";
 import { api, post, fileForm } from "./api";
 import type { Analysis, User } from "../../shared/api";
+import type { InputKind } from "./Check";
 import {
   Panel,
   Button,
@@ -258,18 +259,21 @@ export function ReportsPage({
   onLogin,
   notify,
   initialText = "",
-}: PageProps & { initialText?: string }) {
+  initialKind = "text",
+}: PageProps & { initialText?: string; initialKind?: InputKind }) {
   const { english } = useUI();
   const t = useCopy();
   const [text, setText] = useState(initialText),
+    [kind, setKind] = useState<InputKind>(initialKind),
     [detail, setDetail] = useState(""),
     [evidence, setEvidence] = useState<string[]>([]),
     [items, setItems] = useState<any[]>([]),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
-    if (initialText) setText(initialText);
-  }, [initialText]);
+    setText(initialText);
+    setKind(initialKind);
+  }, [initialText, initialKind]);
   const load = async () => {
     if (!user) return;
     try {
@@ -324,8 +328,9 @@ export function ReportsPage({
     }
     setBusy(true);
     try {
-      await post("/reports", { text, kind: "text", detail, evidence });
+      await post("/reports", { text, kind, detail, evidence });
       setText("");
+      setKind("text");
       setDetail("");
       setEvidence([]);
       notify(t("ส่งเบาะแสแล้ว สถานะรอตรวจสอบ", "Report submitted for review"));
@@ -352,6 +357,29 @@ export function ReportsPage({
         )}
       </Note>
       <Panel style={{ gap: 16 }}>
+        <View style={{ gap: 8 }}>
+          <Txt muted size={12}>{t("ประเภทเบาะแส", "Clue type")}</Txt>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+            {([
+              ["text", "ข้อความ", "Text"],
+              ["url", "ลิงก์", "URL"],
+              ["phone", "เบอร์โทร", "Phone"],
+              ["account", "บัญชี / พร้อมเพย์", "Account / PromptPay"],
+              ["wallet", "Wallet", "Wallet"],
+            ] as [InputKind, string, string][]).map(([value, th, en]) => (
+              <Pressable
+                key={value}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: kind === value, disabled: busy }}
+                accessibilityLabel={t(th, en)}
+                disabled={busy}
+                onPress={() => setKind(value)}
+              >
+                <Pill kind={kind === value ? undefined : "muted"}>{t(th, en)}</Pill>
+              </Pressable>
+            ))}
+          </View>
+        </View>
         <Field
           label={t("ข้อความ ลิงก์ หรือเบาะแส", "Message, link, or entity")}
           multiline

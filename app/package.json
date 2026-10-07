@@ -8,7 +8,7 @@
     "web": "expo start --web",
     "build": "expo export --platform web --clear && node ../scripts/export_webapp.cjs",
     "typecheck": "tsc --noEmit",
-    "test:flows": "node src/__tests__/social.test.cjs && node src/__tests__/privacy.test.cjs",
+    "test:flows": "node src/__tests__/social.test.cjs && node src/__tests__/privacy.test.cjs && node src/__tests__/reports.test.cjs",
     "test:webapp": "node ../scripts/test_webapp.cjs",
     "ios": "expo run:ios",
     "android": "expo run:android"
