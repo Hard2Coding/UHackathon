@@ -24,6 +24,16 @@ After installing dependencies, run `npm run dev` from the repository root. It st
 
 The web build supports Vercel: import the repository at its root and set `EXPO_PUBLIC_API_URL` to a real HTTPS backend. See [VERCEL.md](VERCEL.md). Once Git integration is configured, Vercel builds/deploys the tracked branch according to the project settings. GitHub Actions checks and exports web/Android/iOS artifacts from the same Git SHA. OTA updates for installed mobile apps require an Expo project, update configuration, and a compatible native runtime first; see [RELEASES.md](RELEASES.md). Vercel deployment and mobile OTA publishing have not been activated in this delivery.
 
+## Team Credits
+
+**Repository owner:** [Hard2Coding](https://github.com/Hard2Coding)
+
+| Team member | Role |
+|---|---|
+| Phutawan Sathusarn | Product |
+| Achiraya Sungsriin | UX/UI |
+| [Kitsanapuch](https://github.com/Kitsanapuch) | Development contributor |
+
 ## Repository Layout
 
 ```text
