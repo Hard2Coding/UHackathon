@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "ScamGraph AI",
+    "slug": "scamgraph-ai",
+    "scheme": "scamgraph",
+    "icon": "./assets/icon.png",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "ScamGraph AI",
+      "favicon": "./assets/favicon.png"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "icon": {
+        "light": "./assets/icon.png",
+        "dark": "./assets/icon-dark.png"
+      },
+      "bundleIdentifier": "ai.scamgraph.app"
+    },
+    "android": {
+      "package": "ai.scamgraph.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#f5f6fd"
+      }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "เลือกภาพเพื่ออ่านข้อความหรือ QR ที่คุณต้องการตรวจสอบ",
+          "cameraPermission": "ถ่ายภาพเพื่ออ่านข้อความที่คุณต้องการตรวจสอบ",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ใช้กล้องเพื่อสแกน QR ที่คุณต้องการตรวจสอบ",
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-sharing",
+      "expo-secure-store",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "./plugins/withScamGraphCaller",
+        {
+          "appGroup": "group.ai.scamgraph.app",
+          "extensionName": "ScamGraphCallerDirectory"
+        }
+      ]
+    ],
+    "assetBundlePatterns": ["**/*"]
+  }
+}
