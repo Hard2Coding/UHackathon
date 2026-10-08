@@ -7,11 +7,11 @@
 ต้องใช้ Node.js 22 ขึ้นไป และ Python 3.12 ติดตั้ง dependencies ครั้งแรกด้วยคำสั่งนี้จากโฟลเดอร์ repository:
 
 ```bash
-bash scripts/bootstrap.sh
+npm install
 npm run dev
 ```
 
-`npm run dev` เปิด API พร้อม reload ที่พอร์ต 8000 และ Expo Metro **เพียงตัวเดียว** ที่พอร์ต 8081 เว็บเปิดที่ `http://localhost:8081/` ส่วนแอพมือถือเชื่อมต่อ Metro ตัวเดียวกัน API ใช้ SQLite local demo อย่างชัดเจน พร้อม migrations และข้อมูลตัวอย่าง ไม่ใช่ฐานข้อมูล production
+`npm install` เตรียม dependencies ของแอพและ backend อัตโนมัติ ไม่ต้อง activate Python เอง `npm run dev` เปิด API พร้อม reload ที่พอร์ต 8000 และ Expo Metro **เพียงตัวเดียว** ที่พอร์ต 8081 เว็บเปิดที่ `http://localhost:8081/` ส่วนแอพมือถือเชื่อมต่อ Metro ตัวเดียวกัน API ใช้ SQLite local demo อย่างชัดเจน พร้อม migrations และข้อมูลตัวอย่าง ไม่ใช่ฐานข้อมูล production
 
 Runner เลือก IPv4 ของเครื่องบนเครือข่าย LAN ให้ API ของทั้งสองหน้าจอโดยอัตโนมัติ โทรศัพท์ต้องอยู่ Wi-Fi เดียวกับเครื่องพัฒนาและต้องเชื่อมถึงพอร์ตเหล่านี้ หากมี VPN หรือหลาย network interface ให้ระบุ IP เอง:
 
@@ -53,16 +53,22 @@ EXPO_PUBLIC_API_URL=https://api.your-domain.example/api npm run dev -- --remote-
 | `npm run api` | API local demo อย่างเดียว |
 | `npm run dev:go` | API + เว็บ + Expo Go สำหรับฟังก์ชันหลัก |
 | `npm run android` | สร้างและติดตั้ง development build บน Android/emulator โดยไม่เปิด Metro ซ้ำ |
-| `npm run ios` | สร้างและติดตั้ง development build บน iOS simulator/device ผ่าน Xcode โดยไม่เปิด Metro ซ้ำ |
+| `npm run ios` | เปิดหรือใช้ API/Metro เดิม แล้วสร้าง ติดตั้ง และเปิดแอพ iOS ผ่าน Xcode |
 | `npm run build:web` | export เว็บที่ `app/dist/` |
 | `npm run typecheck` | ตรวจ TypeScript ของ shared app |
 | `npm run test:dev` | ตรวจ URL/พอร์ตและการจัดการ process ของ runner |
 
 ค่าเริ่มต้นใช้ `--dev-client` เพราะฟังก์ชันตรวจสายเรียกเข้าใช้ native module ที่ Expo Go ไม่มี Android ต้องมี JDK/Android SDK และ iOS ต้องมี macOS/Xcode/CocoaPods พร้อม signing ตามอุปกรณ์ที่เลือก การตรวจสายต้องให้สิทธิ์และเปิด role/extension บนเครื่องจริง เว็บและ Expo Go แสดงข้อจำกัดอย่างตรงไปตรงมา
 
-คำสั่ง `android`/`ios` ใช้ `--no-bundler` เพื่อไม่สร้าง Metro อีกตัว ให้เปิด `npm run dev` ใน terminal อีกหน้าต่างและเชื่อม development client กับ Metro ที่ runner แสดง
+หลัง `npm install` ใช้ `npm run ios` ได้ทันที ระบบเริ่มหรือใช้ API/Metro ของโครงการที่ตรวจสอบแล้ว และเชื่อมกับพอร์ตจริงอัตโนมัติ ไม่ใช้ `--no-bundler` คู่กับ `--port` สำหรับ Android ให้เปิด `npm run dev` ก่อน แล้วรัน `npm run android` อีก terminal
+
+เริ่ม iOS Simulator รอบใหม่ด้วย `npm run ios` จะใช้ `localhost` ตามค่าเริ่มต้น เพื่อไม่ให้ IP ของ Wi-Fi เก่าทำให้แอพรอ API ที่เข้าถึงไม่ได้ หากต้องเริ่มเซิร์ฟเวอร์ใหม่ ใช้ `npm run stop` แล้ว `npm run ios` หรือ `npm run dev` โดยไม่ล้างบัญชีหรือข้อมูล Simulator ตัวหยุดตรวจ PID, คำสั่งและโฟลเดอร์ของ runner ก่อนส่ง SIGTERM และไม่หยุดโปรแกรมอื่น
+
+DeviceHub อาจยังเลือก Simulator คนละตัวกับที่ Expo ติดตั้งแอพ ให้เลือกชื่อตามบรรทัด `Installing on ...` ใน sidebar สำหรับเครื่องจริง ระบุ `--device` และ host/API ที่โทรศัพท์เข้าถึงได้ตามส่วน LAN ด้านบน
 
 ตรวจ iPhone 17 Simulator (iOS 26.5) กับ Metro8091/API8011 ผ่านแล้ว บน Xcode27 เครื่องมือหน้าจออุปกรณ์อยู่ที่ `Xcode.app/Contents/Applications/DeviceHub.app` ใช้ Debug build ที่มีการ sign สำหรับ Simulator ตามปกติ; การปิด signing ด้วย `CODE_SIGNING_ALLOWED=NO` ทำให้ application entitlements ขาดและ SecureStore อ่าน Keychain ไม่ได้ Local ad-hoc Simulator signing ไม่ใช่ provisioning สำหรับโทรศัพท์จริง
+
+แก้ crash ของ iOS 27 ด้วย `UIWindowScene` ใน host app และ config plugin `withScamGraphScenes` เพื่อรักษาการแก้เมื่อ prebuild; ส่งต่อ deep link และ lifecycle ให้ Expo เดิม ตรวจจริงบน iPhone 18 Pro / iOS 27 แล้ว: หน้าล็อกอิน → Guest → ตรวจข้อความ → แสดงผล 66.20 → กลับจากหน้าจอ Home โดยผลยังอยู่ ตัวเลขนี้เป็นผลของข้อมูลตัวอย่าง ไม่ใช่ความแม่นยำของระบบหรือโอกาสโกง
 
 หากต้องการฐานข้อมูลที่ตั้งผ่าน `DATABASE_URL` แทน SQLite ให้ใช้ `npm run dev -- --configured-db` คำสั่งพัฒนานี้ตั้ง `APP_ENV=development` เสมอ จึงควรชี้ไปฐานข้อมูลพัฒนาเท่านั้น
 

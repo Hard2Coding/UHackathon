@@ -20,7 +20,7 @@ Google Cloud and LINE projects have not been configured, so real provider login 
 
 The primary repository is `Hard2Coding/UHackathon`, with `main` as its default branch and `DevTutor` for development. Mobile and web share `app/App.tsx`, `app/src`, and `shared`; the API and models live in `backend` and `ml`. Screens do not need to be copied between separate projects. The pinned repository on [Kitsanapuch's profile](https://github.com/Kitsanapuch) links directly to this team repository, so it always opens the same project.
 
-After installing dependencies, run `npm run dev` from the repository root. It starts API reload and one Expo Metro server for web and native development clients. Both platforms consume the shared source. `npm run ios` and `npm run android` build/install the native app using the running Metro server. See [DEVELOPMENT.md](DEVELOPMENT.md) for LAN addresses and port configuration.
+Run `npm install` from the repository root, then `npm run dev` for the web app or `npm run ios` for iOS. Installation prepares the frontend and the project-local Python/API, OCR, and model dependencies. The iOS command starts or reuses the shared API/Metro session, then builds, installs, and opens the app with the project's pinned Expo CLI. Web and mobile consume the same source and API. Android still uses `npm run dev` followed by `npm run android`. See [DEVELOPMENT.md](DEVELOPMENT.md) for LAN addresses and port configuration.
 
 The web build supports Vercel: import the repository at its root and set `EXPO_PUBLIC_API_URL` to a real HTTPS backend. See [VERCEL.md](VERCEL.md). Once Git integration is configured, Vercel builds/deploys the tracked branch according to the project settings. GitHub Actions checks and exports web/Android/iOS artifacts from the same Git SHA. OTA updates for installed mobile apps require an Expo project, update configuration, and a compatible native runtime first; see [RELEASES.md](RELEASES.md). Vercel deployment and mobile OTA publishing have not been activated in this delivery.
 
@@ -55,36 +55,34 @@ Python dependency pins are defined in `requirements.in`. The complete resolved d
 
 ## Run the Local Demo
 
-Requirements: Python **3.12**, Node.js **22 LTS or newer**, and npm. The verification machine used Node 24.18.0/npm 11.16.0. Initial setup requires internet access to install dependencies and download approximately 449 MB of pretrained SentenceTransformer weights. On macOS ARM64, it also downloads approximately 186 MB of portable OCR dependencies. No API key is required for the core demo.
+Requirements: Node.js **22 or newer**, npm, and Python **3.12**. iOS additionally requires macOS, Xcode, an installed iOS Simulator, and CocoaPods. The tools are already installed on the verified development Mac. Initial setup requires internet access for pinned dependencies, pretrained model weights, and optional portable OCR; later installs verify and reuse them.
 
-From the repository root, create `.env` from the example if it does not already exist, then bootstrap:
-
-```bash
-cp .env.example .env
-bash scripts/bootstrap.sh
-```
-
-If Python 3.12 is installed elsewhere, set `PYTHON_BIN=/absolute/path/python3.12` before running bootstrap. To skip the SentenceTransformer download, use `DOWNLOAD_EMBEDDINGS=0 bash scripts/bootstrap.sh`; baseline analysis remains available, and similarity is labeled as a lexical fallback. Use `INSTALL_LOCAL_OCR=0` to skip portable OCR on macOS and install it later with `.venv/bin/python scripts/install_local_ocr.py`.
-
-For shared mobile/web development, use `npm run dev` as described above. The two-terminal demo can also be started separately.
-
-Terminal 1:
+Run these commands from the repository root:
 
 ```bash
-bash scripts/local_demo.sh
+npm install
+npm run dev
 ```
 
-This command explicitly selects **SQLite for the local demo** at `.runtime/scamgraph-demo.db`, runs migrations/seed, and starts the API at `http://localhost:8000`. API documentation is available at `http://localhost:8000/docs`. If model artifacts are missing, the sample dataset is trained before the server starts.
-
-Terminal 2:
+For iOS, use the same installation command followed by:
 
 ```bash
-source scripts/env.sh
-cd app
-npm run web -- --port 8081
+npm run ios
 ```
 
-Open `http://localhost:8081`. The Webapp calls the real local API on port 8000. Browser camera access requires localhost or HTTPS, and permission is requested only when the user selects a camera feature.
+No Python environment activation, separate API terminal, or manual port entry is needed. The install hook creates/verifies the local environment using the pinned lockfiles. `npm run dev` waits for the API/models before opening Expo. `npm run ios` starts the shared servers when needed, or reuses a verified session for this checkout, then connects the development build to its actual Metro port. Its background servers remain running after the native build command finishes.
+
+Use the web URL printed in the terminal. The default fresh session uses Metro/web port 8081 and API port 8000; a reused session keeps its own ports. A fresh default iOS Simulator session uses localhost so a Wi-Fi address change does not break its API/Metro connection. Physical-device selections keep LAN configuration; provide the reachable host/API address for a real phone. `npm start` and `npm run web` are also supported from the root. The iOS launcher supports both classic Simulator and Xcode 27 DeviceHub. Run the root npm scripts instead of downloading a different Expo CLI with `npx expo` from the root directory.
+
+The native host declares a single `UIWindowScene` and starts React Native when that scene connects. This fixes the iOS 27 launch crash `UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`; URL/OAuth return links and foreground/background events are forwarded to the existing Expo handlers. `withScamGraphScenes` preserves the adapter during Expo prebuild. The caller extension keeps its separate lifecycle. See [Apple's scene migration guide](https://developer.apple.com/documentation/uikit/transitioning-to-the-uikit-scene-based-life-cycle). This repository uses its own SDK 55 adapter, rather than newer Expo scene APIs unavailable in the pinned dependencies.
+
+To restart the project servers, run `npm run stop`, then `npm run ios` or `npm run dev`. The stop command verifies this checkout's runner process and stops only its API/Metro service tree. It preserves local account data and simulator contents. A stale configured API address now reports a connection error promptly instead of waiting for models that are already ready.
+
+In Xcode 27 DeviceHub, select the simulator named in the CLI's `Installing on ...` output if the sidebar shows a different device. DeviceHub can retain its previously selected device while Expo boots another simulator. A completed CLI build is checked separately from the visible app screen.
+
+The local demo selects SQLite at `.runtime/scamgraph-demo.db`, applies migrations, seeds marked sample data, and serves the trained artifacts. It preserves existing account data. Browser camera access requires localhost or HTTPS and is requested only when a camera feature is selected.
+
+Advanced setup options remain available: `PYTHON_BIN` selects an installed Python 3.12, `DOWNLOAD_EMBEDDINGS=0` enables the labeled lexical fallback, and `INSTALL_LOCAL_OCR=0` skips the portable OCR install. Set these before `npm install` when intentionally needed.
 
 Development seed accounts:
 
@@ -223,15 +221,7 @@ On iOS, expiry is checked when the extension reloads its directory. Previously l
 
 Android code does not request READ_CALL_LOG/READ_PHONE_STATE/READ_CONTACTS/overlay access and does not read call history or conversations. The OS may withhold some call types/hidden numbers from the service, so coverage is not universal. See [Android CallScreeningService](https://developer.android.com/reference/android/telecom/CallScreeningService). iOS follows Call Directory restrictions and does not create React Native incoming-call popups; see [Apple caller identification](https://developer.apple.com/documentation/callkit/identifying-and-blocking-calls).
 
-Install Android Studio/SDK/JDK for Android, or Xcode/CocoaPods for iOS, then build the app with the native module. With the shared `npm run dev` server running, use `npm run android -- --device` or `npm run ios -- --device` from the root; these commands avoid starting a second Metro server. The following standalone alternative starts its own bundler:
-
-```bash
-source scripts/env.sh
-cd app
-npx expo run:android --device
-# Alternatively, on macOS with Xcode and signing configured:
-npx expo run:ios --device
-```
+Install Android Studio/SDK/JDK for Android, or Xcode/CocoaPods for iOS. From the repository root, `npm install` prepares the dependencies and `npm run ios` builds/installs the app with its native module while starting or reusing the paired API/Metro session. To select a device, use `npm run ios -- --device`. For Android, start `npm run dev` and use `npm run android -- --device` in another terminal.
 
 These commands prebuild when a native project is absent. The config plugin uses bundle ID `ai.scamgraph.app`, App Group `group.ai.scamgraph.app`, and the `ScamGraphCallerDirectory` target. Provision/sign both the host and extension consistently, then enable permissions in device Settings. Regenerate native projects after native dependency/configuration changes; see the [Expo development-build guide](https://docs.expo.dev/develop/development-builds/introduction/).
 
@@ -239,15 +229,14 @@ A full iOS Simulator Debug host with the embedded Call Directory extension was b
 
 ### iOS Development Startup Recovery
 
-If the development build shows `[runtime not ready]: ReferenceError: Property 'MessageQueue' doesn't exist`, stop the Metro session serving that app and restart with a cleared transform cache. From the repository root, use one shared Metro process:
+The root `npm run ios` command pins the project-local Expo CLI, clears Metro cache for a fresh session, and uses the session's actual port. It also validates Xcode 27 DeviceHub instead of relying on the removed Simulator.app. Use:
 
 ```bash
-npm run dev
-# In another terminal, from the same repository root:
+npm install
 npm run ios
 ```
 
-The shared runner already clears Metro's cache. Standalone `npm start` and `npm run web` in `app/` also clear it now. Reopen the development client using the URL printed by that same session; do not connect it to an older server running from another checkout. If you choose a different Metro port, use `npm run ios -- --port 8095` for that port and select its URL in the client. See [DEVELOPMENT.md](DEVELOPMENT.md) for selecting free API/Metro ports.
+An existing shared session is reused automatically; `--port` is supported by the wrapper when intentionally selecting a port. It is not combined with Expo's incompatible `--no-bundler` argument. The API is ready before the app opens. Avoid using an unrelated downloaded CLI or a Metro server from another checkout. See [DEVELOPMENT.md](DEVELOPMENT.md) for advanced host/port settings.
 
 On iPhone 17 Simulator (iOS 26.5), a fresh Metro session with the current Expo 55 / React Native 0.83 dependencies restored startup, rendered the login screen, reached the Dashboard with the API connected, and completed text analysis through the shared API. No native rebuild or dependency downgrade was needed for that observed failure. Cache clearing does not erase account data, and a cold bundle can take longer to build. If the error persists after restarting the correct session, capture that session's full stack and bundle URL before changing native dependencies.
 
