@@ -836,15 +836,15 @@ export default function App() {
     return (
       <Pressable key={key} onPress={() => navigate(key)} accessibilityRole="button"
         accessibilityLabel={t(th, en)} accessibilityState={{ selected }}
-        style={({ pressed }) => ({ flexDirection: mobile ? "column" : "row", alignItems: "center", justifyContent: mobile ? "center" : "flex-start", gap: mobile ? 3 : 12, flex: mobile ? 1 : undefined, paddingHorizontal: mobile ? 3 : 16, paddingVertical: mobile ? 8 : 12, borderRadius: 14, backgroundColor: selected && !scanner ? mobile ? c.soft : "#252a4f" : "transparent", opacity: pressed ? 0.72 : 1, minHeight: mobile ? 61 : 46 })}>
-        {scanner ? <GradientSurface radius={19} style={{ width: 48, height: 48, marginTop: -25, alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(80,64,210,.27)" }}><View style={{ zIndex: 1 }}><Icon size={24} color="#fff" /></View></GradientSurface> : <Icon size={mobile ? 21 : 18} color={color} strokeWidth={selected ? 2.1 : 1.8} />}
-        <Txt size={mobile ? 9 : 12} bold={selected} style={{ color }}>{scanner ? t("สแกน", "Scan") : t(th, en)}</Txt>
+        style={({ pressed }) => ({ flexDirection: mobile ? "column" : "row", alignItems: "center", justifyContent: mobile ? "center" : "flex-start", gap: mobile ? 3 : 12, flex: mobile ? 1 : undefined, paddingHorizontal: mobile ? 3 : 14, paddingVertical: mobile ? 8 : 11, borderRadius: 14, backgroundColor: selected && !scanner ? mobile ? c.soft : "#252a4f" : "transparent", opacity: pressed ? 0.72 : 1, minHeight: mobile ? 61 : 46 })}>
+        {scanner ? <GradientSurface radius={19} style={{ width: 48, height: 48, marginTop: -25, alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(80,64,210,.27)" }}><View style={{ zIndex: 1 }}><Icon size={24} color="#fff" /></View></GradientSurface> : <Icon size={mobile ? 22 : 20} color={color} strokeWidth={selected ? 2.1 : 1.8} />}
+        <Txt size={mobile ? 11 : 15} bold={selected} style={{ color }}>{scanner ? t("สแกน", "Scan") : t(th, en)}</Txt>
       </Pressable>
     );
   };
   const oauthRetryPanel = oauthRetry ? (
     <Panel style={{ gap: 10, margin: 14 }}>
-      <Txt size={12}>
+      <Txt size={13}>
         {t(
           "การเชื่อมต่อขัดข้อง ลองยืนยันคำขอเดิมอีกครั้งได้ในช่วงสั้น ๆ หากหมดอายุให้เริ่มเข้าสู่ระบบใหม่",
           "The connection failed. Retry the same short-lived sign-in request, or start again if it has expired.",
@@ -895,7 +895,7 @@ export default function App() {
           {desktop && (
             <View
               style={{
-                width: 218,
+                width: 240,
                 backgroundColor: "#111d38",
                 borderRightWidth: 1,
                 borderColor: c.line,
@@ -923,24 +923,24 @@ export default function App() {
                   <BrandMark size={30} />
                 </View>
                 <View>
-                  <Txt bold size={18} style={{ lineHeight: 24, color: "#fff" }}>
+                  <Txt bold size={19} style={{ lineHeight: 24, color: "#fff" }}>
                     ScamGraph{" "}
-                    <Txt bold size={18} style={{ color: "#b9a5ff" }}>
+                    <Txt bold size={19} style={{ color: "#b9a5ff" }}>
                       AI
                     </Txt>
                   </Txt>
-                  <Txt size={7} muted style={{ letterSpacing: 0.8, color: "#a9b9d9" }}>
+                  <Txt size={9} muted style={{ letterSpacing: 0.8, color: "#a9b9d9" }}>
                     SEE THE CONNECTIONS
                   </Txt>
                 </View>
               </Pressable>
               <Txt
                 muted
-                size={9}
+                size={12}
                 style={{
-                  letterSpacing: 1.2,
+                  letterSpacing: 1.1,
                   color: "#91a4c8",
-                  paddingLeft: 17,
+                  paddingLeft: 14,
                   marginBottom: 12,
                 }}
               >
@@ -967,10 +967,10 @@ export default function App() {
                 }}
               >
                 <ShieldCheck size={21} color="#a9c4ff" />
-                <Txt bold size={12} style={{ color: "#e5edff" }}>
+                <Txt bold size={14} style={{ color: "#e5edff" }}>
                   {t("เชื่ออย่างมีข้อมูล", "Make informed decisions")}
                 </Txt>
-                <Txt muted size={10} style={{ color: "#adc0e0" }}>
+                <Txt muted size={13} style={{ color: "#adc0e0", lineHeight: 18 }}>
                   {t(
                     "อ่านเหตุผลและข้อมูลที่ขาด ก่อนตัดสินใจทุกครั้ง",
                     "Review evidence and missing data before acting.",
@@ -997,13 +997,13 @@ export default function App() {
                     padding: 10,
                   }}
                 >
-                  <UserRound size={17} color={c.muted} />
+                  <UserRound size={18} color={c.muted} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Txt bold size={12} style={{ color: "#e5edff" }}>
+                  <Txt bold size={14} style={{ color: "#e5edff" }}>
                     {user?.name || t("ผู้เยี่ยมชม", "Guest")}
                   </Txt>
-                  <Txt muted size={10} style={{ color: "#adc0e0" }}>
+                  <Txt muted size={13} style={{ color: "#adc0e0" }}>
                     {user
                       ? t("จัดการบัญชี", "Manage account")
                       : t(
@@ -1012,7 +1012,7 @@ export default function App() {
                         )}
                   </Txt>
                 </View>
-                <ChevronRight size={14} color={c.muted} />
+                <ChevronRight size={15} color={c.muted} />
               </Pressable>
             </View>
           )}
@@ -1034,11 +1034,11 @@ export default function App() {
                 style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
               >
                 {!desktop && <BrandMark size={30} />}
-                <Txt bold size={desktop ? 13 : width < 360 ? 14 : 17}>
+                <Txt bold size={desktop ? 16 : width < 360 ? 15 : 18}>
                   {desktop ? pageTitle : "ScamGraph AI"}
                 </Txt>
                 {desktop && (
-                  <Txt muted size={10}>
+                  <Txt muted size={13}>
                     /{" "}
                     {t(
                       "ตรวจให้เข้าใจ ก่อนตัดสินใจ",
@@ -1062,7 +1062,7 @@ export default function App() {
                   accessibilityLabel={t("สลับภาษา", "Switch language")}
                   onPress={() => setEnglish(!english)}
                 >
-                  <Txt bold muted size={11}>
+                  <Txt bold muted size={13}>
                     {english ? "TH" : "EN"}
                   </Txt>
                 </Pressable>}
@@ -1394,10 +1394,10 @@ export default function App() {
                   flexWrap: "wrap",
                 }}
               >
-                <Txt muted size={9}>
+                <Txt muted size={12}>
                   ScamGraph AI · Predict Before It Gets Reported
                 </Txt>
-                <Txt muted size={9}>
+                <Txt muted size={12}>
                   {t(
                     "ไม่พบประวัติ ไม่ได้แปลว่าปลอดภัย",
                     "No history does not mean safe",
@@ -1447,7 +1447,7 @@ export default function App() {
               ) : (
                 <CheckCircle2 size={18} color="#94dfc4" />
               )}
-              <Txt size={12} style={{ color: "#fff", flex: 1 }}>
+              <Txt size={14} style={{ color: "#fff", flex: 1 }}>
                 {toast.message}
               </Txt>
               <X size={15} color="#ffffff88" />
