@@ -51,7 +51,7 @@ export function Txt({
   children,
   muted = false,
   bold = false,
-  size = 14,
+  size = 15,
   style,
   ...props
 }: {
@@ -71,7 +71,7 @@ export function Txt({
           fontFamily: bold ? "ThaiBold" : "Thai",
           fontSize: size,
           color: muted ? c.muted : c.ink,
-          lineHeight: size * 1.65,
+          lineHeight: size * 1.55,
         },
         style,
       ]}
@@ -152,10 +152,10 @@ export function Button({
           borderWidth: 1,
           borderColor: secondary ? highlighted ? c.teal : c.line : "transparent",
           borderRadius: 14,
-          minHeight: small ? 40 : 49,
+          minHeight: small ? 42 : 50,
           overflow: "hidden",
-          paddingHorizontal: small ? 13 : 20,
-          paddingVertical: small ? 9 : 13,
+          paddingHorizontal: small ? 14 : 20,
+          paddingVertical: small ? 10 : 13,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
@@ -171,9 +171,9 @@ export function Button({
       {loading ? (
         <View style={{ zIndex: 1 }}><ActivityIndicator size="small" color={ink} /></View>
       ) : Icon ? (
-        <View style={{ zIndex: 1 }}><Icon size={small ? 15 : 18} color={ink} /></View>
+        <View style={{ zIndex: 1 }}><Icon size={small ? 16 : 19} color={ink} /></View>
       ) : null}
-      <Txt bold size={small ? 12 : 14} style={{ color: ink, zIndex: 1 }}>
+      <Txt bold size={small ? 13 : 15} style={{ color: ink, zIndex: 1 }}>
         {children}
       </Txt>
     </Pressable>
@@ -189,7 +189,7 @@ export function Field({
   return (
     <View style={{ gap: 7 }}>
       {label && (
-        <Txt bold size={12}>
+        <Txt bold size={13}>
           {label}
         </Txt>
       )}
@@ -202,20 +202,20 @@ export function Field({
         style={[
           {
             fontFamily: "Thai",
-            fontSize: 14,
+            fontSize: 15,
             color: c.ink,
             backgroundColor: c.bg,
             borderWidth: 1,
             borderColor: focused ? c.teal : c.line,
             borderRadius: 14,
-            minHeight: 49,
+            minHeight: 50,
             boxShadow: focused ? "0px 0px 0px 3px rgba(77, 106, 224, 0.11)" : undefined,
-            paddingHorizontal: 14,
+            paddingHorizontal: 15,
             paddingVertical: 12,
             outlineStyle: "none" as any,
           },
           props.multiline
-            ? { minHeight: 130, textAlignVertical: "top", lineHeight: 25 }
+            ? { minHeight: 130, textAlignVertical: "top", lineHeight: 26 }
             : null,
           style,
         ]}
@@ -253,13 +253,13 @@ export function Pill({
     <View
       style={{
         alignSelf: "flex-start",
-        borderRadius: 7,
-        paddingHorizontal: 9,
+        borderRadius: 8,
+        paddingHorizontal: 10,
         paddingVertical: 4,
         backgroundColor: colors[0],
       }}
     >
-      <Txt size={10} bold style={{ color: colors[1] }}>
+      <Txt size={12} bold style={{ color: colors[1], lineHeight: 16 }}>
         {children}
       </Txt>
     </View>
@@ -282,11 +282,11 @@ export function Empty({
       <View style={{ padding: 15, borderRadius: 18, backgroundColor: c.soft }}>
         <Icon size={30} color={c.teal} />
       </View>
-      <Txt bold size={17} style={{ textAlign: "center" }}>
+      <Txt bold size={19} style={{ textAlign: "center" }}>
         {title}
       </Txt>
       {detail && (
-        <Txt muted size={13} style={{ textAlign: "center", maxWidth: 420 }}>
+        <Txt muted size={14} style={{ textAlign: "center", maxWidth: 420 }}>
           {detail}
         </Txt>
       )}
@@ -307,8 +307,8 @@ export function Note({ children }: { children: React.ReactNode }) {
         alignItems: "flex-start",
       }}
     >
-      <Info size={16} color={c.teal} style={{ marginTop: 3 }} />
-      <Txt size={12} muted style={{ flex: 1 }}>
+      <Info size={17} color={c.teal} style={{ marginTop: 3 }} />
+      <Txt size={13} muted style={{ flex: 1, lineHeight: 20 }}>
         {children}
       </Txt>
     </View>
@@ -334,11 +334,11 @@ export function Heading({
       }}
     >
       <View style={{ flex: 1 }}>
-        <Txt bold size={25}>
+        <Txt bold size={26} style={{ lineHeight: 34 }}>
           {title}
         </Txt>
         {subtitle && (
-          <Txt muted size={12} style={{ marginTop: 3 }}>
+          <Txt muted size={14} style={{ marginTop: 4, lineHeight: 21 }}>
             {subtitle}
           </Txt>
         )}
