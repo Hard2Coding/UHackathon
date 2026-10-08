@@ -49,3 +49,13 @@ Caller directory มีข้อมูลจริงที่ยืนยัน
 Browser retest: A66.20 → แก้ B → Scan แสดง input B โดยไม่มีผลเก่าหรือปุ่มบันทึกผลเก่า → ตรวจ B ได้23.78 → Report prefill เป็น B ถูกต้อง TypeScript, 26 client checks และ production web export ผ่านหลังแก้ shared code
 
 Native UI จริงผ่าน DeviceHub ที่มากับ Xcode27: initial unsigned app อ่าน SecureStore ไม่ได้เพราะไม่มี application entitlements; normal local ad-hoc Simulator build แก้ได้โดยไม่แก้ทีม/signing ของโปรเจกต์หรือให้ permission เพิ่ม ติดตั้งโดยไม่ erase และเชื่อม Metro8091; login-first ไม่มี Keychain error, Guest Dashboard API connected และตรวจข้อความตัวอย่างได้66.20 ตรงกับเว็บ ภาพหลักฐานอยู่ใน outputs: `scamgraph-iphone-simulator.png`, `scamgraph-input-integrity.jpg`
+
+## iOS startup recovery — 2026-10-08
+
+- Reproduced the development setup on iPhone 17 Simulator, iOS 26.5. Current Expo 55.0.31 / React Native 0.83.10 / ExpoModulesCore 55.0.26 dependencies align. A fresh Metro session with `--clear` opened the installed app successfully without the reported `MessageQueue` startup error; no dependency downgrade or native rebuild was required. The exact cause in the previously served bundle remains unconfirmed.
+- Updated standalone app start/web scripts to clear Metro cache and documented recovery in the English README. User dependency/Pod changes were preserved.
+- Found a separate native rendering issue: after analysis, replacing the form with its result could leave the existing animated page container blank. Navigating away and back displayed the same result, confirming that the response and result content existed. Native MotionView now uses a static View; web entrance effects are retained.
+- Verified normal development mode with Fast Refresh, login-first startup, guest Dashboard API connectivity, text analysis result rendering (66.20 for the existing synthetic demonstration input), and returning to a new analysis. This score is not real-world accuracy or a fraud probability. No result was saved to user history.
+- TypeScript, 36 client flow/lifecycle checks, and diff whitespace validation passed. Native child-replacement regression covers mocked iOS and Android; the live device check used iOS Simulator only.
+- Work remains on DevTutor. No commit, push, merge, or branch change was performed.
+- Additional iOS 27 check: installed the existing signed development build on iPhone 18 Pro Simulator, preserving its embedded Caller Directory extension and valid simulated App Group entitlements. The user confirmed that the login screen opened. Full result interaction on iOS 27 was not independently verified; live result/return-to-form verification used iOS 26.5. The freshly generated iOS development bundle contains the MessageQueue bridge declaration.

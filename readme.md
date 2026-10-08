@@ -237,6 +237,22 @@ These commands prebuild when a native project is absent. The config plugin uses 
 
 A full iOS Simulator Debug host with the embedded Call Directory extension was built, installed, and launched on iPhone 17 Simulator (iOS 26.5), using local ad-hoc signing and the shared Metro server. The initial unsigned build lacked application entitlements and could not read SecureStore/Keychain. A normal Simulator build restored those entitlements; login-screen startup, Dashboard access, and text analysis through the shared API were verified without the Keychain error. Physical-device signing/installation, release IPA packaging, and real incoming calls remain unverified.
 
+### iOS Development Startup Recovery
+
+If the development build shows `[runtime not ready]: ReferenceError: Property 'MessageQueue' doesn't exist`, stop the Metro session serving that app and restart with a cleared transform cache. From the repository root, use one shared Metro process:
+
+```bash
+npm run dev
+# In another terminal, from the same repository root:
+npm run ios
+```
+
+The shared runner already clears Metro's cache. Standalone `npm start` and `npm run web` in `app/` also clear it now. Reopen the development client using the URL printed by that same session; do not connect it to an older server running from another checkout. If you choose a different Metro port, use `npm run ios -- --port 8095` for that port and select its URL in the client. See [DEVELOPMENT.md](DEVELOPMENT.md) for selecting free API/Metro ports.
+
+On iPhone 17 Simulator (iOS 26.5), a fresh Metro session with the current Expo 55 / React Native 0.83 dependencies restored startup, rendered the login screen, reached the Dashboard with the API connected, and completed text analysis through the shared API. No native rebuild or dependency downgrade was needed for that observed failure. Cache clearing does not erase account data, and a cold bundle can take longer to build. If the error persists after restarting the correct session, capture that session's full stack and bundle URL before changing native dependencies.
+
+Native page containers stay visible when the analysis form is replaced by its result. Web scroll entrance effects remain enabled; native screens use a static container to avoid hiding newly rendered results behind completed animated properties. Form-to-result display and returning to a new analysis were verified in the Simulator.
+
 ### LLM Explanations and Intelligence Sources
 
 Without an LLM key, the app uses working explanation templates grounded in structured evidence. Setting `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` enables an optional `/chat/completions`-compatible endpoint, constrained to existing evidence IDs. Timeout or invalid output falls back to the template and displays the state. Provider prose does not create new history or unsupported source references.

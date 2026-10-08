@@ -116,7 +116,7 @@ export function MotionView({ children, delay = 0, style }: {
   style?: StyleProp<ViewStyle>;
 }) {
   const { reduceMotion, visible } = useMotionPreferences();
-  const animateAtMount = useRef(!reduceMotion && visible).current;
+  const animateAtMount = useRef(Platform.OS === "web" && !reduceMotion && visible).current;
   const progress = useRef(new Animated.Value(animateAtMount ? 0 : 1)).current;
   const element = useRef<View>(null);
   const played = useRef(false);
@@ -151,6 +151,10 @@ export function MotionView({ children, delay = 0, style }: {
     } else reveal();
     return () => { mounted = false; observer?.disconnect(); animation?.stop(); };
   }, [reduceMotion, visible, animateAtMount, progress, delay]);
+  // Native screens replace form content with results inside the same page.
+  // Keep that container static so a completed native animation cannot hide
+  // the new children. Scroll entrance effects remain available on the web.
+  if (Platform.OS !== "web") return <View style={style}>{children}</View>;
   return <Animated.View ref={element} style={[style, {
     opacity: progress,
     transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],

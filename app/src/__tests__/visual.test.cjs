@@ -217,6 +217,25 @@ function findAll(node, predicate, output = []) {
 }
 async function additionalChecks() {
   {
+    for (const platform of ['ios', 'android']) {
+      const r = runtime({ platform });
+      const preferences = r.mount(() => r.useMotionPreferences());
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(preferences.render().reduceMotion, false);
+      const props = { children: 'Check form', style: { padding: 18 } };
+      const screen = r.mount(r.MotionView, props);
+      assert.equal(screen.tree.type.displayName, 'View');
+      assert.deepEqual(screen.tree.props.style, props.style);
+      props.children = 'Risk result';
+      const result = screen.render();
+      assert.equal(result.type.displayName, 'View', 'Native form-to-result replacement must not retain an animated opacity container');
+      assert.equal(result.props.children, 'Risk result');
+      assert.equal(r.animations.length, 0, 'Native result rendering never waits for a decorative entrance');
+      assert.equal(r.observers.length, 0);
+      screen.unmount(); preferences.unmount();
+    }
+  }
+  {
     const initialRead = deferred(), r = runtime({ platform: 'ios', nativeRead: initialRead });
     const preference = r.mount(() => r.useMotionPreferences());
     r.nativeListeners.reduce.forEach(fn => fn(true));
@@ -278,6 +297,6 @@ async function additionalChecks() {
     assert.deepEqual(r.apiCalls, ['/history'], 'Chart interactions never fetch or invent extra records');
     home.unmount();
   }
-  console.log('9 motion/dashboard lifecycle checks passed (actual components; mocked platform/DOM/HTTP).');
+  console.log('10 motion/dashboard lifecycle checks passed (actual components; mocked platform/DOM/HTTP).');
 }
 additionalChecks().catch(error => { console.error(error); process.exitCode = 1; });
