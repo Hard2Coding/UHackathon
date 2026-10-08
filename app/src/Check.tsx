@@ -94,8 +94,8 @@ export function Checker(props: CheckerProps) {
             minWidth: 180,
           }}
         >
-          <ScanLine size={21} color={c.teal} />
-          <Txt bold size={18}>
+          <ScanLine size={22} color={c.teal} />
+          <Txt bold size={20}>
             {t("เริ่มตรวจสอบความเสี่ยง", "Check something suspicious")}
           </Txt>
         </View>
@@ -121,14 +121,14 @@ export function Checker(props: CheckerProps) {
               flexDirection: "row",
               gap: 7,
               alignItems: "center",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              paddingHorizontal: 13,
+              paddingVertical: 9,
               borderRadius: 8,
               backgroundColor: kind === key ? c.card : "transparent",
             }}
           >
-            <Icon size={14} color={kind === key ? c.teal : c.muted} />
-            <Txt size={12} bold={kind === key} muted={kind !== key}>
+            <Icon size={15} color={kind === key ? c.teal : c.muted} />
+            <Txt size={14} bold={kind === key} muted={kind !== key}>
               {t(th, en)}
             </Txt>
           </Pressable>
@@ -171,8 +171,8 @@ export function Checker(props: CheckerProps) {
         }}
       >
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-          <LockKeyhole size={13} color={c.muted} />
-          <Txt muted size={11}>
+          <LockKeyhole size={15} color={c.muted} />
+          <Txt muted size={13}>
             {t(
               "บันทึกประวัติเฉพาะเมื่อคุณเลือก",
               "History is saved only when you choose",
