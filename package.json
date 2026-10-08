@@ -13,7 +13,7 @@
     "api": "node scripts/dev.cjs --api-only",
     "dev:go": "node scripts/dev.cjs --go",
     "android": "npm --prefix app run android -- --no-bundler",
-    "ios": "npm --prefix app run ios -- --no-bundler",
+    "ios": "node scripts/ios.cjs",
     "build:web": "npm --prefix app run build",
     "typecheck": "npm --prefix app run typecheck",
     "test:flows": "npm --prefix app run test:flows",
@@ -21,6 +21,12 @@
     "test:dev": "node scripts/test_dev.cjs",
     "check": "bash scripts/run_checks.sh",
     "activation": ".venv/bin/python scripts/check_activation.py",
-    "test:vercel": "node scripts/test_vercel.cjs"
+    "test:vercel": "node scripts/test_vercel.cjs",
+    "start": "node scripts/dev.cjs",
+    "postinstall": "node scripts/install.cjs",
+    "test:ios": "node scripts/test_ios.cjs && node scripts/test_ios_viewer.cjs && node scripts/test_ios_scenes.cjs",
+    "test:install": "node scripts/test_install.cjs",
+    "stop": "node scripts/stop.cjs",
+    "test:stop": "node scripts/test_stop.cjs"
   }
 }

@@ -54,8 +54,11 @@
           "appGroup": "group.ai.scamgraph.app",
           "extensionName": "ScamGraphCallerDirectory"
         }
-      ]
+      ],
+      "./plugins/withScamGraphScenes"
     ],
-    "assetBundlePatterns": ["**/*"]
+    "assetBundlePatterns": [
+      "**/*"
+    ]
   }
 }

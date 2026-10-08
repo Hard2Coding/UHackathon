@@ -8,8 +8,10 @@ const path = require('node:path');
 const os = require('node:os');
 const net = require('node:net');
 const { spawn, spawnSync } = require('node:child_process');
+const { setTimeout: delay } = require('node:timers/promises');
 const ROOT = path.resolve(__dirname, '..');
 const PUBLIC_CONFIG_KEYS = new Set(['API_PORT', 'EXPO_PORT', 'DEV_HOST', 'EXPO_PUBLIC_API_URL', 'CORS_ORIGINS', 'OAUTH_REDIRECT_ALLOWLIST']);
+const DEV_SESSION_FILE = 'dev-session.json';
 
 const HELP = `ScamGraph AI: shared mobile + web development
 
@@ -33,6 +35,7 @@ Options:
 EXPO_PUBLIC_API_URL in the environment or root .env is honored exactly.
 Use your computer's LAN IP for a physical phone on the same network.
 The local runner sets development mode and adds its own web origins to CORS.
+Compatible running sessions are verified and reused automatically.
 It never kills existing servers or changes HOME. Ctrl+C stops only its children.
 `;
 
@@ -170,7 +173,8 @@ function makePlan(options, environment = process.env, root = ROOT, interfaces) {
   const apiArgs = [path.join(root, 'scripts/start_api.py'), '--reload'];
   if (!options.configuredDb) apiArgs.push('--sqlite-demo');
   const services = [];
-  if (useLocalApi) services.push({ name: 'API', file: python, args: apiArgs, cwd: root, env: apiEnv });
+  if (useLocalApi) services.push({ name: 'API', file: python, args: apiArgs, cwd: root, env: apiEnv,
+    ready: { url: `http://127.0.0.1:${apiPort}/api/health`, label: 'API/models' } });
   if (useExpo) services.push({ name: 'Expo', file: process.execPath, args: expoArgs, cwd: path.join(root, 'app'), env: expoEnv });
   return { root, apiPort, expoPort, host, apiUrl, python, expoCli, useLocalApi, useExpo, services, options, webUrl: `http://localhost:${expoPort}/` };
 }
@@ -187,13 +191,13 @@ async function preflight(plan) {
   const major = Number(process.versions.node.split('.')[0]);
   if (major < 20) throw new Error('Node.js 20 or newer is required.');
   if (plan.useLocalApi) {
-    if (!fs.existsSync(plan.python)) throw new Error('Python environment is missing. Run bash scripts/bootstrap.sh or set SCAMGRAPH_PYTHON to the installed project Python.');
+    if (!fs.existsSync(plan.python)) throw new Error('Python environment is missing. Run npm install from the repository root.');
     const check = spawnSync(plan.python, ['-c', 'import fastapi, uvicorn, sqlalchemy, alembic, dotenv'], { cwd: plan.root, env: plan.services.find(service => service.name === 'API').env, encoding: 'utf8' });
-    if (check.error || check.status !== 0) throw new Error('API dependencies are unavailable. Run bash scripts/bootstrap.sh.');
+    if (check.error || check.status !== 0) throw new Error('API dependencies are unavailable. Run npm install from the repository root.');
     await ensurePortAvailable(plan.apiPort, 'API');
   }
   if (plan.useExpo) {
-    if (!fs.existsSync(plan.expoCli)) throw new Error('Expo dependencies are missing. Run npm ci --prefix app (or bash scripts/bootstrap.sh).');
+    if (!fs.existsSync(plan.expoCli)) throw new Error('Expo dependencies are missing. Run npm install from the repository root.');
     await ensurePortAvailable(plan.expoPort, 'Expo');
   }
 }
@@ -210,7 +214,31 @@ function signalOwnedChild(child, signal) {
   }
 }
 
-function runServices(services, { log = console.log, graceMs = 5000 } = {}) {
+async function waitApiReady(url, { signal, fetcher = fetch, timeoutMs = 180000, intervalMs = 500,
+  logEveryMs = 10000, label = 'API/models', log = console.log } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  let nextMessage = Date.now() + logEveryMs;
+  log(`Waiting for ${label} before opening the app/web...`);
+  while (Date.now() < deadline) {
+    if (signal?.aborted) throw signal.reason;
+    try {
+      const timeout = AbortSignal.timeout(Math.min(2000, Math.max(1, deadline - Date.now())));
+      const response = await fetcher(url, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+      if (response.ok && (await response.json()).status === 'ok') {
+        log(`${label} is ready.`);
+        return;
+      }
+    } catch (error) { if (signal?.aborted) throw signal.reason; }
+    if (Date.now() >= nextMessage) {
+      log(`Preparing ${label}... Waiting for the local health check.`);
+      nextMessage = Date.now() + logEveryMs;
+    }
+    await delay(Math.min(intervalMs, Math.max(1, deadline - Date.now())), undefined, { signal });
+  }
+  throw new Error(`${label} did not become ready within ${Math.round(timeoutMs / 1000)} seconds. Check the API startup output.`);
+}
+
+function runServices(services, { log = console.log, graceMs = 5000, fetcher = fetch } = {}) {
   return new Promise(resolve => {
     const children = [];
     let stopping = false;
@@ -218,6 +246,7 @@ function runServices(services, { log = console.log, graceMs = 5000 } = {}) {
     let pending = 0;
     let escalation;
     let escalated = false;
+    const startup = new AbortController();
     const ownGroupExists = child => {
       if (process.platform === 'win32' || !child.pid) return false;
       try { process.kill(-child.pid, 0); return true; } catch { return false; }
@@ -235,6 +264,7 @@ function runServices(services, { log = console.log, graceMs = 5000 } = {}) {
     const stop = code => {
       if (stopping) return;
       stopping = true;
+      startup.abort();
       finalCode = code;
       log('Stopping only the API/Expo processes started by this command...');
       for (const child of children) signalOwnedChild(child, 'SIGTERM');
@@ -251,25 +281,31 @@ function runServices(services, { log = console.log, graceMs = 5000 } = {}) {
     process.once('SIGINT', onInterrupt);
     process.once('SIGTERM', onTerminate);
     if (!services.length) { stop(0); return; }
-    for (const service of services) {
-      if (stopping) break;
-      const child = spawn(service.file, service.args, { cwd: service.cwd, env: service.env, stdio: 'inherit', detached: process.platform !== 'win32' });
-      children.push(child);
-      pending++;
-      let completed = false;
-      const complete = (code, signal, error) => {
-        if (completed) return;
-        completed = true;
-        pending--;
-        if (!stopping) {
-          log(error ? `${service.name} failed to start: ${error.code || error.message}` : `${service.name} exited (${signal || code}).`);
-          stop(error ? 1 : (code || 0));
-        }
-        finish();
-      };
-      child.once('error', error => complete(null, null, error));
-      child.once('exit', (code, signal) => complete(code, signal));
-    }
+    const start = async () => {
+      for (const service of services) {
+        if (stopping) break;
+        const child = spawn(service.file, service.args, { cwd: service.cwd, env: service.env, stdio: 'inherit', detached: process.platform !== 'win32' });
+        children.push(child);
+        pending++;
+        let completed = false;
+        const complete = (code, signal, error) => {
+          if (completed) return;
+          completed = true;
+          pending--;
+          if (!stopping) {
+            log(error ? `${service.name} failed to start: ${error.code || error.message}` : `${service.name} exited (${signal || code}).`);
+            stop(error ? 1 : (code || 0));
+          }
+          finish();
+        };
+        child.once('error', error => complete(null, null, error));
+        child.once('exit', (code, signal) => complete(code, signal));
+        if (service.ready) await waitApiReady(service.ready.url, { ...service.ready, signal: startup.signal, fetcher, log });
+      }
+    };
+    start().catch(error => {
+      if (!stopping) { log(`Development startup failed: ${error.message}`); stop(1); }
+    });
   });
 }
 
@@ -282,21 +318,152 @@ function printPlan(plan) {
   if (plan.options.dryRun) for (const service of plan.services) console.log(`${service.name}: ${service.file} ${service.args.map(arg => /\s/.test(arg) ? JSON.stringify(arg) : arg).join(' ')}`);
 }
 
+function readDevSession(root = ROOT) {
+  const file = path.join(root, '.runtime', DEV_SESSION_FILE);
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw new Error(`Cannot read development session metadata: ${error.message}`);
+  }
+}
+
+function processIsAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try { process.kill(pid, 0); return true; }
+  catch (error) { return error.code !== 'ESRCH'; }
+}
+
+function writeDevSession(plan, ownerPid = process.pid) {
+  if (!Number.isInteger(ownerPid) || ownerPid <= 0) throw new Error('Development session owner must be a positive process ID');
+  const root = fs.realpathSync(plan.root);
+  const directory = path.join(root, '.runtime');
+  const file = path.join(directory, DEV_SESSION_FILE);
+  const existing = readDevSession(root);
+  if (existing && existing.pid !== ownerPid && processIsAlive(existing.pid)) {
+    throw new Error(`Another development runner is already active (PID ${existing.pid}). Its servers were left running.`);
+  }
+  // Only public connection details belong here; never serialize service environments.
+  const session = {
+    schemaVersion: 1,
+    pid: ownerPid,
+    root,
+    appRoot: path.join(root, 'app'),
+    apiPort: plan.apiPort,
+    expoPort: plan.expoPort,
+    host: plan.host,
+    apiUrl: plan.apiUrl,
+    useLocalApi: plan.useLocalApi,
+    useExpo: plan.useExpo,
+    go: plan.options.go,
+    configuredDb: plan.options.configuredDb,
+  };
+  fs.mkdirSync(directory, { recursive: true });
+  const temporary = `${file}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.tmp`;
+  try {
+    fs.writeFileSync(temporary, `${JSON.stringify(session, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
+    fs.renameSync(temporary, file);
+  } finally {
+    fs.rmSync(temporary, { force: true });
+  }
+  return session;
+}
+
+function clearDevSession(root = ROOT, ownerPid = process.pid) {
+  const file = path.join(root, '.runtime', DEV_SESSION_FILE);
+  const existing = readDevSession(root);
+  if (!existing || existing.pid !== ownerPid) return false;
+  try { fs.unlinkSync(file); return true; }
+  catch (error) { if (error.code === 'ENOENT') return false; throw error; }
+}
+
+async function verifyDevSession(session, root = ROOT, { fetcher = fetch } = {}) {
+  if (!session || session.schemaVersion !== 1 || !processIsAlive(session.pid)) return false;
+  const actualRoot = fs.realpathSync(root);
+  if (session.root !== actualRoot || session.appRoot !== path.join(actualRoot, 'app')) {
+    throw new Error('Development session belongs to another checkout; its servers were left running.');
+  }
+  portNumber(session.apiPort, 'Session API_PORT');
+  portNumber(session.expoPort, 'Session EXPO_PORT');
+  validApiUrl(session.apiUrl);
+  validHost(session.host);
+  const request = (url, headers = {}) => fetcher(url, { headers, signal: AbortSignal.timeout(3000) });
+  let manifest;
+  try {
+    if (session.useExpo) {
+      const base = `http://localhost:${session.expoPort}`;
+      const status = await request(`${base}/status`);
+      if (!status.ok || (await status.text()).trim() !== 'packager-status:running') return false;
+      const response = await request(`${base}/`, { 'expo-platform': 'ios', accept: 'application/expo+json' });
+      if (!response.ok) return false;
+      manifest = await response.json();
+    }
+    if (session.useLocalApi) {
+      const health = await request(`http://127.0.0.1:${session.apiPort}/api/health`);
+      if (!health.ok || (await health.json()).status !== 'ok') return false;
+    }
+  } catch { return false; }
+  if (session.useExpo) {
+    const projectRoot = manifest?.extra?.expoClient?._internal?.projectRoot;
+    let appRoot;
+    try { appRoot = fs.realpathSync(projectRoot); } catch { /* Missing/foreign manifest. */ }
+    if (appRoot !== session.appRoot) throw new Error('Metro belongs to another checkout; it was left running.');
+  }
+  return true;
+}
+
+async function findReusableSession(options, environment = process.env, root = ROOT, { fetcher = fetch } = {}) {
+  const session = readDevSession(root);
+  if (!session || !processIsAlive(session.pid)) return null;
+  if (session.schemaVersion !== 1) throw new Error('The active development session has invalid metadata; its servers were left running.');
+  const settings = { ...readPublicConfig(root), ...environment };
+  const conflict = detail => { throw new Error(`The running session has different ${detail}. It was left running. Stop that session first, or use its existing configuration.`); };
+  for (const [option, setting, key] of [['apiPort', 'API_PORT', 'apiPort'], ['expoPort', 'EXPO_PORT', 'expoPort']]) {
+    const requested = options[option] ?? settings[setting];
+    if (requested !== undefined && portNumber(requested, setting) !== session[key]) conflict(setting);
+  }
+  const host = options.host ?? settings.DEV_HOST;
+  if (host !== undefined && validHost(host) !== session.host) conflict('DEV_HOST');
+  if (settings.EXPO_PUBLIC_API_URL && validApiUrl(settings.EXPO_PUBLIC_API_URL) !== session.apiUrl) conflict('EXPO_PUBLIC_API_URL');
+  if (options.mode !== 'api' && !session.useExpo) conflict('services (the active session has no Metro)');
+  if (options.mode !== 'api' && !!options.go !== !!session.go) conflict('Expo Go / development-client mode');
+  if (!!options.configuredDb !== !!session.configuredDb) conflict('database mode');
+  if (!options.remoteApi !== !!session.useLocalApi) conflict('local / remote API mode');
+  if (!await verifyDevSession(session, root, { fetcher })) {
+    throw new Error('The existing development session is still starting or is unavailable. Its servers were left running; check the original terminal or .runtime/dev-ios.log.');
+  }
+  return session;
+}
+
 async function main(argv = process.argv.slice(2)) {
   try {
     const options = parseArgs(argv);
     if (options.help) { console.log(HELP); return 0; }
+    if (!options.dryRun) {
+      const session = await findReusableSession(options);
+      if (session) {
+        console.log(`Reusing the verified shared session (PID ${session.pid}); no new servers were started.`);
+        printPlan(makePlan({ ...options, apiPort: session.apiPort, expoPort: session.expoPort, host: session.host },
+          { ...process.env, EXPO_PUBLIC_API_URL: session.apiUrl }));
+        return 0;
+      }
+    }
     const plan = makePlan(options);
     printPlan(plan);
     if (options.dryRun) return 0;
     await preflight(plan);
     fs.mkdirSync(path.join(ROOT, '.runtime'), { recursive: true });
-    return await runServices(plan.services);
+    writeDevSession(plan);
+    try {
+      return await runServices(plan.services);
+    } finally {
+      clearDevSession(plan.root);
+    }
   } catch (error) {
     console.error(`ScamGraph development: ${error.message}`);
     return 1;
   }
 }
 
-module.exports = { parseArgs, makePlan, validApiUrl, ensurePortAvailable, preflight, runServices, main };
+module.exports = { readPublicConfig, parseArgs, makePlan, validApiUrl, ensurePortAvailable, preflight, runServices, waitApiReady, readDevSession, writeDevSession, clearDevSession, verifyDevSession, findReusableSession, main };
 if (require.main === module) main().then(code => { process.exitCode = code; });

@@ -19,7 +19,7 @@ import { Txt, Field, Button, useUI, useCopy } from "./ui";
 import { BrandMark, GoogleMark } from "./Brand";
 import { post } from "./api";
 import { startSocial, authErrorMessage } from "./social";
-import { AmbientBackground, MotionView } from "./visual";
+import { AmbientBackground, InteractiveSurface, MotionView } from "./visual";
 import type { User } from "../../shared/api";
 
 export function LoginScreen({
@@ -156,9 +156,9 @@ export function LoginScreen({
           <View style={{ width: wide ? "50%" : "100%", minHeight: wide ? 620 : undefined, alignItems: "center", justifyContent: "center", backgroundColor: wide ? "#081735" : "transparent", padding: wide ? 38 : 0, paddingBottom: wide ? 38 : 25, overflow: "hidden" }}>
             {wide && <AmbientBackground dark variant="network" />}
             <MotionView style={{ alignItems: "center" }}>
-              <View style={{ width: wide ? 226 : 116, height: wide ? 226 : 116, borderRadius: wide ? 62 : 34, alignItems: "center", justifyContent: "center", marginBottom: wide ? 28 : 8, backgroundColor: wide || dark ? "rgba(40, 62, 129, 0.25)" : "rgba(235, 247, 255, 0.45)", boxShadow: wide || dark ? "0px 0px 60px rgba(76, 121, 245, 0.22)" : "0px 10px 40px rgba(101, 113, 217, 0.10)" }}>
+              <InteractiveSurface enabled={wide} radius={wide ? 62 : 34} tilt={4} glow="rgba(101, 199, 255, 0.23)" style={{ width: wide ? 226 : 116, height: wide ? 226 : 116, marginBottom: wide ? 28 : 8 }} contentStyle={{ alignItems: "center", justifyContent: "center" }} surfaceStyle={{ backgroundColor: wide || dark ? "rgba(40, 62, 129, 0.25)" : "rgba(235, 247, 255, 0.45)", boxShadow: wide || dark ? "0px 0px 60px rgba(76, 121, 245, 0.22)" : "0px 10px 40px rgba(101, 113, 217, 0.10)" }}>
                 <BrandMark size={wide ? 206 : 112} />
-              </View>
+              </InteractiveSurface>
               <Txt bold size={wide ? 40 : 27} style={{ color: wide ? "#fff" : c.ink, letterSpacing: -0.9, textAlign: "center", lineHeight: wide ? 56 : 40 }}>
                 ScamGraph <Txt bold size={wide ? 40 : 27} style={{ color: wide ? "#ab8afa" : c.teal }}>AI</Txt>
               </Txt>
